@@ -1,3 +1,20 @@
+# Temporary
 .res/
+
+# AI
 !AGENT.md
 !CLAUDE.md
+
+# Build artifacts
+*.plugin
+coverage.out
+vendor/
+
+# Nix
+result
+.envrc
+.direnv/
+
+# Go
+*.test
+*.out
