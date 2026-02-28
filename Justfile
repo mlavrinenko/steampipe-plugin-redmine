@@ -8,6 +8,36 @@ plugin_dir := install_dir / "plugins" / "local" / "redmine"
 default:
     @just --list
 
+# Clone reference repositories to .res/ (for development reference)
+setup-refs:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p .res
+    echo "Cloning reference repositories to .res/..."
+
+    repos=(
+        "https://github.com/mattn/go-redmine.git:.res/go-redmine"
+        "https://github.com/nixys/nxs-go-redmine.git:.res/nxs-go-redmine"
+        "https://github.com/turbot/steampipe-docs.git:.res/steampipe-docs"
+        "https://github.com/turbot/steampipe-plugin-github.git:.res/steampipe-plugin-github"
+        "https://github.com/turbot/steampipe-plugin-sdk.git:.res/steampipe-plugin-sdk"
+    )
+
+    for repo_spec in "${repos[@]}"; do
+        url="${repo_spec%%:*}"
+        dest="${repo_spec##*:}"
+        repo_name="$(basename "$dest")"
+
+        if [ -d "$dest/.git" ]; then
+            echo "✓ $repo_name already exists, skipping"
+        else
+            echo "→ Cloning $repo_name..."
+            git clone --depth 1 "$url" "$dest"
+        fi
+    done
+
+    echo "✓ Reference repositories ready in .res/"
+
 # Build the plugin binary
 build:
     go build -o {{ plugin_name }}.plugin -tags netgo *.go

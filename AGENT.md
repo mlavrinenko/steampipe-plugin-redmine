@@ -56,6 +56,8 @@ steampipe-plugin-redmine/
 | go-redmine | `.res/go-redmine/` | Alternative client (not used) |
 | Steampipe docs | `.res/steampipe-docs/docs/develop/` | Plugin development guides |
 
+Tip: You can setup all references using `just setup-refs`.
+
 ## Development Patterns
 
 ### Steampipe Plugin Conventions
