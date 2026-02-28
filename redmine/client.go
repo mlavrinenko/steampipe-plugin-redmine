@@ -3,6 +3,7 @@ package redmine
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	rm "github.com/nixys/nxs-go-redmine/v5"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
@@ -23,8 +24,10 @@ func connect(ctx context.Context, d *plugin.QueryData) (*rm.Context, error) {
 		return nil, fmt.Errorf("'api_key' must be set in the connection configuration or REDMINE_API_KEY environment variable")
 	}
 
+	endpoint := strings.TrimRight(*config.Endpoint, "/")
+
 	client := rm.Init(rm.Settings{
-		Endpoint: *config.Endpoint,
+		Endpoint: endpoint,
 		APIKey:   *config.APIKey,
 	})
 

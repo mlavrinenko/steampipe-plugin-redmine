@@ -51,17 +51,32 @@ func issueStatusRowFromObject(s rm.IssueStatusObject) issueStatusRow {
 
 //// HYDRATE FUNCTIONS
 
-func getIssueStatus(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
+func getAllIssueStatuses(ctx context.Context, d *plugin.QueryData) ([]rm.IssueStatusObject, error) {
+	cacheKey := "redmine_issue_statuses"
+	if cached, ok := d.ConnectionManager.Cache.Get(cacheKey); ok {
+		return cached.([]rm.IssueStatusObject), nil
+	}
+
 	client, err := connect(ctx, d)
 	if err != nil {
 		return nil, err
 	}
 
-	statusID := d.EqualsQuals["id"].GetInt64Value()
-
 	statuses, _, err := client.IssueStatusAllGet()
 	if err != nil {
 		return nil, fmt.Errorf("failed to list issue statuses: %w", err)
+	}
+
+	d.ConnectionManager.Cache.Set(cacheKey, statuses)
+	return statuses, nil
+}
+
+func getIssueStatus(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
+	statusID := d.EqualsQuals["id"].GetInt64Value()
+
+	statuses, err := getAllIssueStatuses(ctx, d)
+	if err != nil {
+		return nil, err
 	}
 
 	for _, status := range statuses {
@@ -74,14 +89,9 @@ func getIssueStatus(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateD
 }
 
 func listIssueStatuses(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
-	client, err := connect(ctx, d)
+	statuses, err := getAllIssueStatuses(ctx, d)
 	if err != nil {
 		return nil, err
-	}
-
-	statuses, _, err := client.IssueStatusAllGet()
-	if err != nil {
-		return nil, fmt.Errorf("failed to list issue statuses: %w", err)
 	}
 
 	for _, status := range statuses {

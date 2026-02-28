@@ -60,17 +60,32 @@ func trackerRowFromObject(t rm.TrackerObject) trackerRow {
 
 //// HYDRATE FUNCTIONS
 
-func getTracker(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
+func getAllTrackers(ctx context.Context, d *plugin.QueryData) ([]rm.TrackerObject, error) {
+	cacheKey := "redmine_trackers"
+	if cached, ok := d.ConnectionManager.Cache.Get(cacheKey); ok {
+		return cached.([]rm.TrackerObject), nil
+	}
+
 	client, err := connect(ctx, d)
 	if err != nil {
 		return nil, err
 	}
 
-	trackerID := d.EqualsQuals["id"].GetInt64Value()
-
 	trackers, _, err := client.TrackerAllGet()
 	if err != nil {
 		return nil, fmt.Errorf("failed to list trackers: %w", err)
+	}
+
+	d.ConnectionManager.Cache.Set(cacheKey, trackers)
+	return trackers, nil
+}
+
+func getTracker(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
+	trackerID := d.EqualsQuals["id"].GetInt64Value()
+
+	trackers, err := getAllTrackers(ctx, d)
+	if err != nil {
+		return nil, err
 	}
 
 	for _, tracker := range trackers {
@@ -83,14 +98,9 @@ func getTracker(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData)
 }
 
 func listTrackers(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
-	client, err := connect(ctx, d)
+	trackers, err := getAllTrackers(ctx, d)
 	if err != nil {
 		return nil, err
-	}
-
-	trackers, _, err := client.TrackerAllGet()
-	if err != nil {
-		return nil, fmt.Errorf("failed to list trackers: %w", err)
 	}
 
 	for _, tracker := range trackers {

@@ -44,6 +44,9 @@ func TestTimeEntryRowFromObject(t *testing.T) {
 		if row.CreatedOn == nil {
 			t.Error("CreatedOn should not be nil")
 		}
+		if row.Title != "2.50h on Project: Worked on feature" {
+			t.Errorf("Title = %q, want %q", row.Title, "2.50h on Project: Worked on feature")
+		}
 	})
 
 	t.Run("no issue", func(t *testing.T) {
@@ -60,6 +63,9 @@ func TestTimeEntryRowFromObject(t *testing.T) {
 
 		if row.IssueID != 0 {
 			t.Errorf("IssueID = %d, want 0", row.IssueID)
+		}
+		if row.Title != "1.00h on Project" {
+			t.Errorf("Title = %q, want %q", row.Title, "1.00h on Project")
 		}
 	})
 }

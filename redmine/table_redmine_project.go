@@ -175,6 +175,10 @@ func listProjects(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateDat
 	}
 
 	for {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+
 		result, _, err := client.ProjectMultiGet(rm.ProjectMultiGetRequest{
 			Includes: includes,
 			Filters:  filters,

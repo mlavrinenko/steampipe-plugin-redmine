@@ -24,7 +24,6 @@ type myAccountRow struct {
 	LastLoginOn     *time.Time
 	PasswdChangedOn *time.Time
 	TwofaScheme     *string
-	APIKey          *string
 	Status          int64
 	CustomFields    []rm.CustomFieldGetObject
 	Groups          *[]rm.IDName
@@ -41,7 +40,6 @@ func tableRedmineMyAccount() *plugin.Table {
 		Columns: []*plugin.Column{
 			{Name: "id", Type: proto.ColumnType_INT, Description: "The user ID."},
 			{Name: "admin", Type: proto.ColumnType_BOOL, Description: "Whether the user has admin privileges."},
-			{Name: "api_key", Type: proto.ColumnType_STRING, Description: "The user's API key."},
 			{Name: "created_on", Type: proto.ColumnType_TIMESTAMP, Description: "When the user was created."},
 			{Name: "custom_fields", Type: proto.ColumnType_JSON, Description: "Custom field values."},
 			{Name: "first_name", Type: proto.ColumnType_STRING, Description: "The user's first name."},
@@ -74,7 +72,6 @@ func myAccountRowFromObject(u rm.UserObject) myAccountRow {
 		LastLoginOn:     parseRedmineTime(u.LastLoginOn),
 		PasswdChangedOn: parseRedmineTime(u.PasswdChangedOn),
 		TwofaScheme:     u.TwofaScheme,
-		APIKey:          u.APIKey,
 		CustomFields:    u.CustomFields,
 		Groups:          u.Groups,
 		Memberships:     u.Memberships,

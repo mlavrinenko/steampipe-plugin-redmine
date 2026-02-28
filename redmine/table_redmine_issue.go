@@ -235,6 +235,10 @@ func listIssues(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData)
 	}
 
 	for {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+
 		result, _, err := client.IssuesMultiGet(rm.IssueMultiGetRequest{
 			Filters: filters,
 			Sort:    sort,

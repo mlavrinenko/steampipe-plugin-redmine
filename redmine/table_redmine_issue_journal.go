@@ -233,6 +233,10 @@ func listIssueJournals(ctx context.Context, d *plugin.QueryData, h *plugin.Hydra
 	}
 
 	for {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+
 		result, _, err := client.IssuesMultiGet(rm.IssueMultiGetRequest{
 			Filters: filters,
 			Sort:    sort,
@@ -260,7 +264,7 @@ func listIssueJournals(ctx context.Context, d *plugin.QueryData, h *plugin.Hydra
 				_, err := fetchAndStreamIssueJournals(gctx, d, client, issueID, dr)
 				if err != nil {
 					// Swallow 404s: issue may have been deleted between list and get
-					if isNotFoundError([]string{"404", "not found"})(err) {
+					if isNotFoundError([]string{"returned: 404"})(err) {
 						plugin.Logger(ctx).Warn("listIssueJournals", "issue_id", issueID, "msg", "issue not found, skipping", "error", err)
 						return nil
 					}

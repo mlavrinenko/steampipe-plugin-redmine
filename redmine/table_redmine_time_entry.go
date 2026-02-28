@@ -11,7 +11,6 @@ import (
 	rm "github.com/nixys/nxs-go-redmine/v5"
 	"github.com/turbot/steampipe-plugin-sdk/v5/grpc/proto"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
-	"github.com/turbot/steampipe-plugin-sdk/v5/plugin/transform"
 )
 
 //// TABLE DEFINITION
@@ -30,6 +29,7 @@ type timeEntryRow struct {
 	SpentOn      *time.Time
 	CreatedOn    *time.Time
 	UpdatedOn    *time.Time
+	Title        string
 }
 
 func tableRedmineTimeEntry() *plugin.Table {
@@ -67,7 +67,7 @@ func tableRedmineTimeEntry() *plugin.Table {
 			{Name: "updated_on", Type: proto.ColumnType_TIMESTAMP, Description: "When the time entry was last updated."},
 			{Name: "user_name", Type: proto.ColumnType_STRING, Description: "The user name."},
 			// Standard columns
-			{Name: "title", Type: proto.ColumnType_STRING, Description: "The display name for this resource.", Transform: transform.FromField("Comments")},
+			{Name: "title", Type: proto.ColumnType_STRING, Description: "The display name for this resource."},
 		},
 	}
 }
@@ -75,6 +75,11 @@ func tableRedmineTimeEntry() *plugin.Table {
 //// HELPER FUNCTIONS
 
 func timeEntryRowFromObject(te rm.TimeEntryObject) timeEntryRow {
+	title := fmt.Sprintf("%.2fh on %s", te.Hours, te.Project.Name)
+	if te.Comments != "" {
+		title = fmt.Sprintf("%.2fh on %s: %s", te.Hours, te.Project.Name, te.Comments)
+	}
+
 	return timeEntryRow{
 		ID:           te.ID,
 		ProjectID:    te.Project.ID,
@@ -89,6 +94,7 @@ func timeEntryRowFromObject(te rm.TimeEntryObject) timeEntryRow {
 		SpentOn:      parseRedmineDate(&te.SpentOn),
 		CreatedOn:    parseRedmineTime(te.CreatedOn),
 		UpdatedOn:    parseRedmineTime(te.UpdatedOn),
+		Title:        title,
 	}
 }
 
@@ -176,6 +182,10 @@ func listTimeEntries(ctx context.Context, d *plugin.QueryData, h *plugin.Hydrate
 	params.Set("limit", strconv.FormatInt(pageSize, 10))
 
 	for {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+
 		params.Set("offset", strconv.FormatInt(offset, 10))
 
 		var result rm.TimeEntryResult

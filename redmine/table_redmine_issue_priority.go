@@ -54,17 +54,32 @@ func issuePriorityRowFromObject(p rm.EnumerationPriorityObject) issuePriorityRow
 
 //// HYDRATE FUNCTIONS
 
-func getIssuePriority(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
+func getAllIssuePriorities(ctx context.Context, d *plugin.QueryData) ([]rm.EnumerationPriorityObject, error) {
+	cacheKey := "redmine_issue_priorities"
+	if cached, ok := d.ConnectionManager.Cache.Get(cacheKey); ok {
+		return cached.([]rm.EnumerationPriorityObject), nil
+	}
+
 	client, err := connect(ctx, d)
 	if err != nil {
 		return nil, err
 	}
 
-	priorityID := d.EqualsQuals["id"].GetInt64Value()
-
 	priorities, _, err := client.EnumerationPrioritiesAllGet()
 	if err != nil {
 		return nil, fmt.Errorf("failed to list issue priorities: %w", err)
+	}
+
+	d.ConnectionManager.Cache.Set(cacheKey, priorities)
+	return priorities, nil
+}
+
+func getIssuePriority(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
+	priorityID := d.EqualsQuals["id"].GetInt64Value()
+
+	priorities, err := getAllIssuePriorities(ctx, d)
+	if err != nil {
+		return nil, err
 	}
 
 	for _, priority := range priorities {
@@ -77,14 +92,9 @@ func getIssuePriority(ctx context.Context, d *plugin.QueryData, h *plugin.Hydrat
 }
 
 func listIssuePriorities(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
-	client, err := connect(ctx, d)
+	priorities, err := getAllIssuePriorities(ctx, d)
 	if err != nil {
 		return nil, err
-	}
-
-	priorities, _, err := client.EnumerationPrioritiesAllGet()
-	if err != nil {
-		return nil, fmt.Errorf("failed to list issue priorities: %w", err)
 	}
 
 	for _, priority := range priorities {

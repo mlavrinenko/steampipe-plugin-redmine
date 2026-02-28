@@ -14,7 +14,7 @@ func isRetryableError(err error) bool {
 		return false
 	}
 	msg := err.Error()
-	return strings.Contains(msg, "429") || strings.Contains(msg, "503")
+	return strings.Contains(msg, "returned: 429") || strings.Contains(msg, "returned: 503")
 }
 
 func shouldRetryError(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData, err error) bool {
@@ -37,11 +37,13 @@ func retryConfig() *plugin.RetryConfig {
 
 func isNotFoundError(notFoundErrors []string) plugin.ErrorPredicate {
 	return func(err error) bool {
-		if err != nil {
-			for _, item := range notFoundErrors {
-				if strings.Contains(err.Error(), item) {
-					return true
-				}
+		if err == nil {
+			return false
+		}
+		msg := err.Error()
+		for _, item := range notFoundErrors {
+			if strings.Contains(msg, item) {
+				return true
 			}
 		}
 		return false

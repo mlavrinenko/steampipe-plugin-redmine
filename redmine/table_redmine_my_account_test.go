@@ -9,7 +9,6 @@ import (
 func TestMyAccountRowFromObject(t *testing.T) {
 	status := rm.UserStatus(1)
 	twofa := "totp"
-	apiKey := "abc123"
 
 	tests := []struct {
 		name   string
@@ -29,7 +28,6 @@ func TestMyAccountRowFromObject(t *testing.T) {
 				LastLoginOn:     "2026-02-28T12:00:00Z",
 				PasswdChangedOn: "2026-01-15T00:00:00Z",
 				TwofaScheme:     &twofa,
-				APIKey:          &apiKey,
 				Status:          &status,
 			},
 			checks: func(t *testing.T, row myAccountRow) {
@@ -45,9 +43,6 @@ func TestMyAccountRowFromObject(t *testing.T) {
 				if row.Status != 1 {
 					t.Errorf("expected Status 1, got %d", row.Status)
 				}
-				if row.APIKey == nil || *row.APIKey != "abc123" {
-					t.Error("expected APIKey abc123")
-				}
 				if row.TwofaScheme == nil || *row.TwofaScheme != "totp" {
 					t.Error("expected TwofaScheme totp")
 				}
@@ -62,9 +57,6 @@ func TestMyAccountRowFromObject(t *testing.T) {
 			checks: func(t *testing.T, row myAccountRow) {
 				if row.Status != 0 {
 					t.Errorf("expected Status 0 for nil, got %d", row.Status)
-				}
-				if row.APIKey != nil {
-					t.Error("expected nil APIKey")
 				}
 				if row.TwofaScheme != nil {
 					t.Error("expected nil TwofaScheme")

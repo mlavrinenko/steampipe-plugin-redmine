@@ -23,6 +23,7 @@ Use SQL to query projects, issues, users, time entries, and journals from a Redm
 - [redmine_my_account](tables/redmine_my_account.md)
 - [redmine_project](tables/redmine_project.md)
 - [redmine_time_entry](tables/redmine_time_entry.md)
+- [redmine_time_entry_activity](tables/redmine_time_entry_activity.md)
 - [redmine_tracker](tables/redmine_tracker.md)
 - [redmine_user](tables/redmine_user.md)
 - [redmine_version](tables/redmine_version.md)

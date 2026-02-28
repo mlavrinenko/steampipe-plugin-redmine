@@ -11,15 +11,15 @@ func TestIsRetryableError(t *testing.T) {
 		expected bool
 	}{
 		"429 rate limit": {
-			err:      errors.New("unexpected status code: 429"),
+			err:      errors.New("unexpected status code has been returned (expected: 200, returned: 429, url: http://example.com, method: GET)"),
 			expected: true,
 		},
 		"503 unavailable": {
-			err:      errors.New("unexpected status code: 503"),
+			err:      errors.New("unexpected status code has been returned (expected: 200, returned: 503, url: http://example.com, method: GET)"),
 			expected: true,
 		},
 		"500 server error": {
-			err:      errors.New("unexpected status code: 500"),
+			err:      errors.New("unexpected status code has been returned (expected: 200, returned: 500, url: http://example.com, method: GET)"),
 			expected: false,
 		},
 		"nil error": {
@@ -28,6 +28,10 @@ func TestIsRetryableError(t *testing.T) {
 		},
 		"generic error": {
 			err:      errors.New("connection refused"),
+			expected: false,
+		},
+		"incidental 429 in text": {
+			err:      errors.New("processed 429 records"),
 			expected: false,
 		},
 	}
@@ -43,22 +47,22 @@ func TestIsRetryableError(t *testing.T) {
 }
 
 func TestIsNotFoundError(t *testing.T) {
-	predicate := isNotFoundError([]string{"404", "NotFound"})
+	predicate := isNotFoundError([]string{"returned: 404", "returned: 422"})
 
 	tests := map[string]struct {
 		err      error
 		expected bool
 	}{
 		"404 error": {
-			err:      errors.New("unexpected status code: 404"),
+			err:      errors.New("unexpected status code has been returned (expected: 200, returned: 404, url: http://example.com, method: GET)"),
 			expected: true,
 		},
-		"NotFound error": {
-			err:      errors.New("resource NotFound"),
+		"422 error": {
+			err:      errors.New("unexpected status code has been returned (expected: 200, returned: 422, url: http://example.com, method: GET)"),
 			expected: true,
 		},
 		"500 error": {
-			err:      errors.New("unexpected status code: 500"),
+			err:      errors.New("unexpected status code has been returned (expected: 200, returned: 500, url: http://example.com, method: GET)"),
 			expected: false,
 		},
 		"nil error": {
@@ -67,6 +71,10 @@ func TestIsNotFoundError(t *testing.T) {
 		},
 		"empty error": {
 			err:      errors.New(""),
+			expected: false,
+		},
+		"incidental 404 in text": {
+			err:      errors.New("found 404 items in database"),
 			expected: false,
 		},
 	}

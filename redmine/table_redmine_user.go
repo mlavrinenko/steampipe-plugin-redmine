@@ -135,6 +135,10 @@ func listUsers(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) 
 	}
 
 	for {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+
 		result, _, err := client.UserMultiGet(rm.UserMultiGetRequest{
 			Filters: filters,
 			Offset:  offset,

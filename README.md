@@ -13,6 +13,7 @@ A [Steampipe](https://steampipe.io) plugin to query a [Redmine](https://www.redm
 | [redmine_my_account](docs/tables/redmine_my_account.md) | The currently authenticated user (API key owner). |
 | [redmine_project](docs/tables/redmine_project.md) | Projects with trackers, categories, and modules. |
 | [redmine_time_entry](docs/tables/redmine_time_entry.md) | Time entries with filtering by project, issue, user, activity, and date. |
+| [redmine_time_entry_activity](docs/tables/redmine_time_entry_activity.md) | Time entry activity definitions (Development, Design, etc.). |
 | [redmine_tracker](docs/tables/redmine_tracker.md) | Tracker definitions (Bug, Feature, Support, etc.). |
 | [redmine_user](docs/tables/redmine_user.md) | Users (listing requires admin privileges). |
 | [redmine_version](docs/tables/redmine_version.md) | Versions (milestones) per project. |
