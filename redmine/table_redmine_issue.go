@@ -205,11 +205,11 @@ func listIssues(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData)
 	if d.EqualsQuals["priority_id"] != nil {
 		filters.FieldAdd("priority_id", fmt.Sprintf("%d", d.EqualsQuals["priority_id"].GetInt64Value()))
 	}
-	if d.EqualsQuals["assigned_to_id"] != nil {
-		filters.FieldAdd("assigned_to_id", fmt.Sprintf("%d", d.EqualsQuals["assigned_to_id"].GetInt64Value()))
-	}
 	if d.EqualsQuals["assigned_to_me"] != nil && d.EqualsQuals["assigned_to_me"].GetBoolValue() {
+		// assigned_to_me takes precedence over assigned_to_id
 		filters.FieldAdd("assigned_to_id", "me")
+	} else if d.EqualsQuals["assigned_to_id"] != nil {
+		filters.FieldAdd("assigned_to_id", fmt.Sprintf("%d", d.EqualsQuals["assigned_to_id"].GetInt64Value()))
 	}
 
 	// Date range filters
@@ -253,7 +253,7 @@ func listIssues(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData)
 			}
 		}
 
-		if offset+result.Limit >= result.TotalCount {
+		if int64(len(result.Issues)) < pageSize {
 			break
 		}
 		offset += pageSize

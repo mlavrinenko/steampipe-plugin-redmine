@@ -193,7 +193,7 @@ func listProjects(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateDat
 			}
 		}
 
-		if offset+result.Limit >= result.TotalCount {
+		if int64(len(result.Projects)) < pageSize {
 			break
 		}
 		offset += pageSize

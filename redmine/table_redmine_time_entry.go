@@ -11,6 +11,7 @@ import (
 	rm "github.com/nixys/nxs-go-redmine/v5"
 	"github.com/turbot/steampipe-plugin-sdk/v5/grpc/proto"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
+	"github.com/turbot/steampipe-plugin-sdk/v5/plugin/transform"
 )
 
 //// TABLE DEFINITION
@@ -65,6 +66,8 @@ func tableRedmineTimeEntry() *plugin.Table {
 			{Name: "project_name", Type: proto.ColumnType_STRING, Description: "The project name."},
 			{Name: "updated_on", Type: proto.ColumnType_TIMESTAMP, Description: "When the time entry was last updated."},
 			{Name: "user_name", Type: proto.ColumnType_STRING, Description: "The user name."},
+			// Standard columns
+			{Name: "title", Type: proto.ColumnType_STRING, Description: "The display name for this resource.", Transform: transform.FromField("Comments")},
 		},
 	}
 }
@@ -137,7 +140,10 @@ func listTimeEntries(ctx context.Context, d *plugin.QueryData, h *plugin.Hydrate
 		return nil, err
 	}
 
-	// Build query parameters
+	// We use raw client.Get() with manual pagination instead of the library's
+	// TimeEntryAllGet() for two reasons:
+	// 1. TimeEntryAllGet fetches all pages into memory (no early exit via RowsRemaining)
+	// 2. The library's TimeEntryGetRequestFilters doesn't support issue_id filtering
 	params := url.Values{}
 
 	if d.EqualsQuals["project_id"] != nil {
@@ -193,7 +199,7 @@ func listTimeEntries(ctx context.Context, d *plugin.QueryData, h *plugin.Hydrate
 			}
 		}
 
-		if offset+result.Limit >= result.TotalCount {
+		if int64(len(result.TimeEntries)) < pageSize {
 			break
 		}
 		offset += pageSize

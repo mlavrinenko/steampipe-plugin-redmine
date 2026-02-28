@@ -62,6 +62,8 @@ func tableRedmineIssueJournal() *plugin.Table {
 			{Name: "project_name", Type: proto.ColumnType_STRING, Description: "The project name."},
 			{Name: "user_id", Type: proto.ColumnType_INT, Description: "ID of the user who created the journal entry."},
 			{Name: "user_name", Type: proto.ColumnType_STRING, Description: "Name of the user who created the journal entry."},
+			// Standard columns
+			{Name: "title", Type: proto.ColumnType_STRING, Description: "The display name for this resource.", Transform: transform.FromField("IssueSubject")},
 		},
 	}
 }
@@ -257,6 +259,11 @@ func listIssueJournals(ctx context.Context, d *plugin.QueryData, h *plugin.Hydra
 				}
 				_, err := fetchAndStreamIssueJournals(gctx, d, client, issueID, dr)
 				if err != nil {
+					// Swallow 404s: issue may have been deleted between list and get
+					if isNotFoundError([]string{"404", "not found"})(err) {
+						plugin.Logger(ctx).Warn("listIssueJournals", "issue_id", issueID, "msg", "issue not found, skipping", "error", err)
+						return nil
+					}
 					plugin.Logger(ctx).Error("listIssueJournals", "issue_id", issueID, "error", err)
 				}
 				return err
@@ -271,7 +278,7 @@ func listIssueJournals(ctx context.Context, d *plugin.QueryData, h *plugin.Hydra
 			return nil, nil
 		}
 
-		if offset+result.Limit >= result.TotalCount {
+		if int64(len(result.Issues)) < pageSize {
 			break
 		}
 		offset += pageSize

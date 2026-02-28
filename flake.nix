@@ -46,6 +46,7 @@
               mkdir -p $out
               cp $GOPATH/bin/steampipe-plugin-redmine $out/steampipe-plugin-redmine.plugin
               cp -R config $out/.
+              cp -R docs $out/.
 
               runHook postInstall
             '';

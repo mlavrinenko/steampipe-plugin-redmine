@@ -18,18 +18,21 @@ activity (journal entries) from issues to help write time-entry reports.
 steampipe-plugin-redmine/
   main.go                              # Entry point: plugin.Serve()
   redmine/
-    plugin.go                          # Plugin definition, table map (7 tables)
+    plugin.go                          # Plugin definition, table map (10 tables)
     connection_config.go               # Config struct (endpoint, api_key)
     client.go                          # Redmine client factory with caching
     errors.go                          # Retry/ignore error predicates
     helpers.go                         # Time/date parsing utilities
     table_redmine_issue.go             # Issues table
     table_redmine_issue_journal.go     # Denormalized issue+journal view
+    table_redmine_issue_priority.go    # Issue priority reference table
     table_redmine_issue_status.go      # Issue status reference table
+    table_redmine_my_account.go        # Current authenticated user (singleton)
     table_redmine_project.go           # Projects table
     table_redmine_time_entry.go        # Time entries table
     table_redmine_tracker.go           # Tracker reference table
     table_redmine_user.go              # Users table
+    table_redmine_version.go           # Versions (milestones) table
     *_test.go                          # Unit tests
   docs/
     index.md                           # Plugin documentation

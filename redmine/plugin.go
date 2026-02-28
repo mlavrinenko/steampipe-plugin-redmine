@@ -32,13 +32,16 @@ func Plugin(ctx context.Context) *plugin.Plugin {
 			ShouldIgnoreError: isNotFoundError([]string{"404", "not found"}),
 		},
 		TableMap: map[string]*plugin.Table{
-			"redmine_issue":         tableRedmineIssue(),
-			"redmine_issue_journal": tableRedmineIssueJournal(),
-			"redmine_issue_status":  tableRedmineIssueStatus(),
-			"redmine_project":       tableRedmineProject(),
-			"redmine_time_entry":    tableRedmineTimeEntry(),
-			"redmine_tracker":       tableRedmineTracker(),
-			"redmine_user":          tableRedmineUser(),
+			"redmine_issue":          tableRedmineIssue(),
+			"redmine_issue_journal":  tableRedmineIssueJournal(),
+			"redmine_issue_priority": tableRedmineIssuePriority(),
+			"redmine_issue_status":   tableRedmineIssueStatus(),
+			"redmine_my_account":     tableRedmineMyAccount(),
+			"redmine_project":        tableRedmineProject(),
+			"redmine_time_entry":     tableRedmineTimeEntry(),
+			"redmine_tracker":        tableRedmineTracker(),
+			"redmine_user":           tableRedmineUser(),
+			"redmine_version":        tableRedmineVersion(),
 		},
 	}
 	return p

@@ -8,11 +8,14 @@ A [Steampipe](https://steampipe.io) plugin to query a [Redmine](https://www.redm
 |-------|-------------|
 | [redmine_issue](docs/tables/redmine_issue.md) | Issues with filtering by project, tracker, status, priority, assignee, and date ranges. |
 | [redmine_issue_journal](docs/tables/redmine_issue_journal.md) | Journal entries (comments and field changes) on issues. |
+| [redmine_issue_priority](docs/tables/redmine_issue_priority.md) | Issue priority definitions (Low, Normal, High, Urgent, Immediate). |
 | [redmine_issue_status](docs/tables/redmine_issue_status.md) | Issue status definitions (New, In Progress, Closed, etc.). |
+| [redmine_my_account](docs/tables/redmine_my_account.md) | The currently authenticated user (API key owner). |
 | [redmine_project](docs/tables/redmine_project.md) | Projects with trackers, categories, and modules. |
 | [redmine_time_entry](docs/tables/redmine_time_entry.md) | Time entries with filtering by project, issue, user, activity, and date. |
 | [redmine_tracker](docs/tables/redmine_tracker.md) | Tracker definitions (Bug, Feature, Support, etc.). |
 | [redmine_user](docs/tables/redmine_user.md) | Users (listing requires admin privileges). |
+| [redmine_version](docs/tables/redmine_version.md) | Versions (milestones) per project. |
 
 ## Query Examples
 

@@ -76,7 +76,7 @@ from
   redmine_issue
 where
   status_is_closed = false
-  and due_date < current_date::text;
+  and due_date < now();
 ```
 
 ### List high-priority issues

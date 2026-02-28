@@ -7,6 +7,7 @@ import (
 	rm "github.com/nixys/nxs-go-redmine/v5"
 	"github.com/turbot/steampipe-plugin-sdk/v5/grpc/proto"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
+	"github.com/turbot/steampipe-plugin-sdk/v5/plugin/transform"
 )
 
 //// TABLE DEFINITION
@@ -30,8 +31,10 @@ func tableRedmineIssueStatus() *plugin.Table {
 		},
 		Columns: []*plugin.Column{
 			{Name: "id", Type: proto.ColumnType_INT, Description: "The status ID."},
-			{Name: "name", Type: proto.ColumnType_STRING, Description: "The status name."},
 			{Name: "is_closed", Type: proto.ColumnType_BOOL, Description: "Whether this status represents a closed state."},
+			{Name: "name", Type: proto.ColumnType_STRING, Description: "The status name."},
+			// Standard columns
+			{Name: "title", Type: proto.ColumnType_STRING, Description: "The display name for this resource.", Transform: transform.FromField("Name")},
 		},
 	}
 }
