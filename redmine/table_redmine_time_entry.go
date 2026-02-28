@@ -47,7 +47,7 @@ func tableRedmineTimeEntry() *plugin.Table {
 				{Name: "issue_id", Require: plugin.Optional, Operators: []string{"="}},
 				{Name: "user_id", Require: plugin.Optional, Operators: []string{"="}},
 				{Name: "activity_id", Require: plugin.Optional, Operators: []string{"="}},
-				{Name: "spent_on", Require: plugin.Optional, Operators: []string{">=", ">", "<", "<="}},
+				{Name: "spent_on", Require: plugin.Optional, Operators: []string{"=", ">=", ">", "<", "<="}},
 			},
 		},
 		Columns: []*plugin.Column{
@@ -96,25 +96,6 @@ func timeEntryRowFromObject(te rm.TimeEntryObject) timeEntryRow {
 		UpdatedOn:    parseRedmineTime(te.UpdatedOn),
 		Title:        title,
 	}
-}
-
-// extractSpentOnRange parses spent_on qualifiers into from/to date strings (YYYY-MM-DD).
-func extractSpentOnRange(quals plugin.KeyColumnQualMap) (from, to string) {
-	if quals["spent_on"] == nil {
-		return "", ""
-	}
-
-	for _, q := range quals["spent_on"].Quals {
-		ts := q.Value.GetTimestampValue().AsTime()
-		date, isFrom := adjustDateBound(q.Operator, ts)
-		if isFrom {
-			from = date
-		} else {
-			to = date
-		}
-	}
-
-	return from, to
 }
 
 //// HYDRATE FUNCTIONS

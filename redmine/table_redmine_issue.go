@@ -66,8 +66,8 @@ func tableRedmineIssue() *plugin.Table {
 				{Name: "priority_id", Require: plugin.Optional, Operators: []string{"="}},
 				{Name: "assigned_to_id", Require: plugin.Optional, Operators: []string{"="}},
 				{Name: "assigned_to_me", Require: plugin.Optional, Operators: []string{"="}},
-				{Name: "created_on", Require: plugin.Optional, Operators: []string{">=", ">", "<", "<="}},
-				{Name: "updated_on", Require: plugin.Optional, Operators: []string{">=", ">", "<", "<="}},
+				{Name: "created_on", Require: plugin.Optional, Operators: []string{"=", ">=", ">", "<", "<="}},
+				{Name: "updated_on", Require: plugin.Optional, Operators: []string{"=", ">=", ">", "<", "<="}},
 			},
 		},
 		Columns: []*plugin.Column{
@@ -77,7 +77,7 @@ func tableRedmineIssue() *plugin.Table {
 			{Name: "tracker_id", Type: proto.ColumnType_INT, Description: "The tracker ID."},
 			{Name: "status_id", Type: proto.ColumnType_INT, Description: "The issue status ID."},
 			{Name: "assigned_to_id", Type: proto.ColumnType_INT, Description: "The assigned user ID."},
-			{Name: "assigned_to_me", Type: proto.ColumnType_BOOL, Description: "Filter-only column: if true, return issues assigned to the API key owner. Always returns false in query results.", Transform: transform.FromConstant(false)},
+			{Name: "assigned_to_me", Type: proto.ColumnType_BOOL, Description: "Filter-only: set to true in WHERE to return issues assigned to the API key owner. Always returns false in results; use assigned_to_id/assigned_to_name for the actual assignee.", Transform: transform.FromConstant(false)},
 			// Remaining columns alphabetically
 			{Name: "assigned_to_name", Type: proto.ColumnType_STRING, Description: "The assigned user name."},
 			{Name: "author_id", Type: proto.ColumnType_INT, Description: "The author user ID."},
@@ -215,13 +215,13 @@ func listIssues(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData)
 	// Date range filters
 	if d.Quals["created_on"] != nil {
 		dr := extractDateRange(d.Quals, "created_on")
-		if f := buildDateFilter(dr); f != "" {
+		if f := buildTimestampFilter(dr); f != "" {
 			filters.FieldAdd("created_on", f)
 		}
 	}
 	if d.Quals["updated_on"] != nil {
 		dr := extractDateRange(d.Quals, "updated_on")
-		if f := buildDateFilter(dr); f != "" {
+		if f := buildTimestampFilter(dr); f != "" {
 			filters.FieldAdd("updated_on", f)
 		}
 	}

@@ -2,7 +2,7 @@
 
 ## 0.1.0 (2026-02-28)
 
-_Initial release with 10 tables._
+_Initial release with 11 tables._
 
 ### Tables
 
@@ -13,6 +13,7 @@ _Initial release with 10 tables._
 - `redmine_my_account` - The currently authenticated user (API key owner). Singleton table.
 - `redmine_project` - Projects with trackers, categories, enabled modules, and time entry activities. Supports Get by `id` or `identifier`.
 - `redmine_time_entry` - Time entries with filters for project, issue, user, activity, and spent_on date range.
+- `redmine_time_entry_activity` - Time entry activity definitions (reference table). Supports Get by `id`.
 - `redmine_tracker` - Tracker definitions (reference table). Supports Get by `id`.
 - `redmine_user` - Users with groups and memberships (listing requires admin privileges).
 - `redmine_version` - Versions (milestones) per project. Supports Get by `id` and List by `project_id`.

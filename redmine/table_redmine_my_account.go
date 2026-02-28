@@ -3,7 +3,6 @@ package redmine
 import (
 	"context"
 	"fmt"
-	"time"
 
 	rm "github.com/nixys/nxs-go-redmine/v5"
 	"github.com/turbot/steampipe-plugin-sdk/v5/grpc/proto"
@@ -12,23 +11,6 @@ import (
 )
 
 //// TABLE DEFINITION
-
-type myAccountRow struct {
-	ID              int64
-	Login           string
-	Admin           bool
-	FirstName       string
-	LastName        string
-	Mail            string
-	CreatedOn       *time.Time
-	LastLoginOn     *time.Time
-	PasswdChangedOn *time.Time
-	TwofaScheme     *string
-	Status          int64
-	CustomFields    []rm.CustomFieldGetObject
-	Groups          *[]rm.IDName
-	Memberships     *[]rm.UserMembershipObject
-}
 
 func tableRedmineMyAccount() *plugin.Table {
 	return &plugin.Table{
@@ -58,32 +40,6 @@ func tableRedmineMyAccount() *plugin.Table {
 	}
 }
 
-//// HELPER FUNCTIONS
-
-func myAccountRowFromObject(u rm.UserObject) myAccountRow {
-	row := myAccountRow{
-		ID:              u.ID,
-		Login:           u.Login,
-		Admin:           u.Admin,
-		FirstName:       u.FirstName,
-		LastName:        u.LastName,
-		Mail:            u.Mail,
-		CreatedOn:       parseRedmineTime(u.CreatedOn),
-		LastLoginOn:     parseRedmineTime(u.LastLoginOn),
-		PasswdChangedOn: parseRedmineTime(u.PasswdChangedOn),
-		TwofaScheme:     u.TwofaScheme,
-		CustomFields:    u.CustomFields,
-		Groups:          u.Groups,
-		Memberships:     u.Memberships,
-	}
-
-	if u.Status != nil {
-		row.Status = int64(*u.Status)
-	}
-
-	return row
-}
-
 //// HYDRATE FUNCTIONS
 
 func getMyAccount(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
@@ -102,7 +58,7 @@ func getMyAccount(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateDat
 		return nil, fmt.Errorf("failed to get current user: %w", err)
 	}
 
-	d.StreamListItem(ctx, myAccountRowFromObject(user))
+	d.StreamListItem(ctx, userRowFromObject(user))
 
 	return nil, nil
 }

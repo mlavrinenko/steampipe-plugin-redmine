@@ -15,7 +15,6 @@ func Plugin(ctx context.Context) *plugin.Plugin {
 		Name: "steampipe-plugin-redmine",
 		ConnectionConfigSchema: &plugin.ConnectionConfigSchema{
 			NewInstance: ConfigInstance,
-			Schema:      ConfigSchema,
 		},
 		ConnectionConfigChangedFunc: configChanged,
 		DefaultTransform:            transform.FromGo().NullIfZero(),

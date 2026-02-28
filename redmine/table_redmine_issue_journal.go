@@ -43,7 +43,7 @@ func tableRedmineIssueJournal() *plugin.Table {
 		List: &plugin.ListConfig{
 			Hydrate: listIssueJournals,
 			KeyColumns: []*plugin.KeyColumn{
-				{Name: "created_on", Require: plugin.Required, Operators: []string{">=", ">", "<", "<="}},
+				{Name: "created_on", Require: plugin.Required, Operators: []string{"=", ">=", ">", "<", "<="}},
 				{Name: "issue_id", Require: plugin.Optional},
 				{Name: "project_id", Require: plugin.Optional},
 			},
@@ -66,81 +66,6 @@ func tableRedmineIssueJournal() *plugin.Table {
 			{Name: "title", Type: proto.ColumnType_STRING, Description: "The display name for this resource.", Transform: transform.FromField("IssueSubject")},
 		},
 	}
-}
-
-//// HELPER FUNCTIONS
-
-// dateRange represents a half-open time interval [from, to).
-type dateRange struct {
-	from *time.Time
-	to   *time.Time
-}
-
-// extractDateRange parses timestamp qualifiers for the given column into a dateRange.
-func extractDateRange(quals plugin.KeyColumnQualMap, column ...string) dateRange {
-	col := "created_on"
-	if len(column) > 0 {
-		col = column[0]
-	}
-
-	var dr dateRange
-
-	if quals[col] == nil {
-		return dr
-	}
-
-	for _, q := range quals[col].Quals {
-		ts := q.Value.GetTimestampValue().AsTime()
-		bound, isFrom := adjustTimestampBound(q.Operator, ts)
-		if isFrom {
-			t := bound
-			dr.from = &t
-		} else {
-			t := bound
-			dr.to = &t
-		}
-	}
-
-	return dr
-}
-
-// journalInRange checks if a journal's created_on falls within the date range.
-func journalInRange(journalCreatedOn string, dr dateRange) bool {
-	t, err := time.Parse(time.RFC3339, journalCreatedOn)
-	if err != nil {
-		// Try alternative format without timezone
-		t, err = time.Parse("2006-01-02T15:04:05Z", journalCreatedOn)
-		if err != nil {
-			return false
-		}
-	}
-
-	if dr.from != nil && t.Before(*dr.from) {
-		return false
-	}
-	if dr.to != nil && !t.Before(*dr.to) {
-		return false
-	}
-
-	return true
-}
-
-// buildDateFilter converts a dateRange into a Redmine API date filter string.
-// Uses the >< (between) operator when both bounds exist, or >= / <= for single bounds.
-func buildDateFilter(dr dateRange) string {
-	layout := "2006-01-02T15:04:05Z"
-
-	if dr.from != nil && dr.to != nil {
-		return "><" + dr.from.Format(layout) + "|" + dr.to.Format(layout)
-	}
-	if dr.from != nil {
-		return ">=" + dr.from.Format(layout)
-	}
-	if dr.to != nil {
-		return "<=" + dr.to.Format(layout)
-	}
-
-	return ""
 }
 
 //// HYDRATE FUNCTIONS
@@ -204,9 +129,8 @@ func listIssueJournals(ctx context.Context, d *plugin.QueryData, h *plugin.Hydra
 	filters := rm.IssueGetRequestFiltersInit()
 
 	// Use updated_on to narrow down candidate issues
-	updatedOnFilter := buildDateFilter(dr)
-	if updatedOnFilter != "" {
-		filters.FieldAdd("updated_on", updatedOnFilter)
+	if f := buildTimestampFilter(dr); f != "" {
+		filters.FieldAdd("updated_on", f)
 	}
 
 	if d.EqualsQuals["project_id"] != nil {
@@ -307,7 +231,7 @@ func fetchAndStreamIssueJournals(
 
 	// Stream all journals within the date range
 	for _, journal := range journals {
-		if !journalInRange(journal.CreatedOn, dr) {
+		if !timestampInRange(journal.CreatedOn, dr) {
 			continue
 		}
 

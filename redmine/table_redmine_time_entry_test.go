@@ -69,8 +69,3 @@ func TestTimeEntryRowFromObject(t *testing.T) {
 		}
 	})
 }
-
-func TestExtractSpentOnRange(t *testing.T) {
-	// extractSpentOnRange requires plugin.KeyColumnQualMap which is hard to construct in unit tests.
-	// The operator logic is extracted into adjustDateBound and tested in helpers_test.go.
-}

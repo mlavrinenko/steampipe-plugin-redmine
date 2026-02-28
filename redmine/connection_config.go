@@ -4,17 +4,11 @@ import (
 	"os"
 
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
-	"github.com/turbot/steampipe-plugin-sdk/v5/plugin/schema"
 )
 
 type redmineConfig struct {
 	Endpoint *string `hcl:"endpoint"`
 	APIKey   *string `hcl:"api_key"`
-}
-
-var ConfigSchema = map[string]*schema.Attribute{
-	"endpoint": {Type: schema.TypeString},
-	"api_key":  {Type: schema.TypeString},
 }
 
 func ConfigInstance() interface{} {
@@ -25,8 +19,16 @@ func GetConfig(connection *plugin.Connection) *redmineConfig {
 	if connection == nil || connection.Config == nil {
 		return &redmineConfig{}
 	}
-	config, ok := connection.Config.(*redmineConfig)
-	if !ok {
+
+	// The SDK may store config as either *redmineConfig or redmineConfig (by value)
+	// depending on the parsing path used.
+	var config *redmineConfig
+	switch c := connection.Config.(type) {
+	case *redmineConfig:
+		config = c
+	case redmineConfig:
+		config = &c
+	default:
 		return &redmineConfig{}
 	}
 

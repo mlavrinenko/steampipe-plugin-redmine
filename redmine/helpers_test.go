@@ -138,3 +138,110 @@ func TestAdjustDateBound(t *testing.T) {
 		})
 	}
 }
+
+func TestTimestampInRange(t *testing.T) {
+	beforeRef := time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)
+	afterRef := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+
+	tests := map[string]struct {
+		timestamp string
+		dr        dateRange
+		expected  bool
+	}{
+		"within range": {
+			timestamp: "2026-02-15T10:00:00Z",
+			dr:        dateRange{from: &beforeRef, to: &afterRef},
+			expected:  true,
+		},
+		"at range start (inclusive)": {
+			timestamp: "2026-02-01T00:00:00Z",
+			dr:        dateRange{from: &beforeRef, to: &afterRef},
+			expected:  true,
+		},
+		"at range end (exclusive)": {
+			timestamp: "2026-03-01T00:00:00Z",
+			dr:        dateRange{from: &beforeRef, to: &afterRef},
+			expected:  false,
+		},
+		"before range": {
+			timestamp: "2026-01-31T23:59:59Z",
+			dr:        dateRange{from: &beforeRef, to: &afterRef},
+			expected:  false,
+		},
+		"after range": {
+			timestamp: "2026-03-01T00:00:01Z",
+			dr:        dateRange{from: &beforeRef, to: &afterRef},
+			expected:  false,
+		},
+		"no lower bound": {
+			timestamp: "2020-01-01T00:00:00Z",
+			dr:        dateRange{from: nil, to: &afterRef},
+			expected:  true,
+		},
+		"no upper bound": {
+			timestamp: "2030-12-31T23:59:59Z",
+			dr:        dateRange{from: &beforeRef, to: nil},
+			expected:  true,
+		},
+		"no bounds": {
+			timestamp: "2026-02-15T10:00:00Z",
+			dr:        dateRange{from: nil, to: nil},
+			expected:  true,
+		},
+		"invalid timestamp": {
+			timestamp: "not-a-date",
+			dr:        dateRange{from: nil, to: nil},
+			expected:  false,
+		},
+		"RFC3339 with offset": {
+			timestamp: "2026-02-15T10:00:00+00:00",
+			dr:        dateRange{from: &beforeRef, to: &afterRef},
+			expected:  true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			result := timestampInRange(tc.timestamp, tc.dr)
+			if result != tc.expected {
+				t.Errorf("timestampInRange(%q, %+v) = %v, want %v", tc.timestamp, tc.dr, result, tc.expected)
+			}
+		})
+	}
+}
+
+func TestBuildTimestampFilter(t *testing.T) {
+	from := time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)
+	to := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+
+	tests := map[string]struct {
+		dr       dateRange
+		expected string
+	}{
+		"both bounds": {
+			dr:       dateRange{from: &from, to: &to},
+			expected: "><2026-02-01T00:00:00Z|2026-03-01T00:00:00Z",
+		},
+		"only from": {
+			dr:       dateRange{from: &from, to: nil},
+			expected: ">=2026-02-01T00:00:00Z",
+		},
+		"only to": {
+			dr:       dateRange{from: nil, to: &to},
+			expected: "<=2026-03-01T00:00:00Z",
+		},
+		"no bounds": {
+			dr:       dateRange{from: nil, to: nil},
+			expected: "",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			result := buildTimestampFilter(tc.dr)
+			if result != tc.expected {
+				t.Errorf("buildTimestampFilter(%+v) = %q, want %q", tc.dr, result, tc.expected)
+			}
+		})
+	}
+}
