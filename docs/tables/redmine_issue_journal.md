@@ -1,6 +1,6 @@
 # Table: redmine_issue_journal
 
-Journal entries (comments and field changes) on Redmine issues where the current API user has participated. Because the Redmine API only returns journals on the single-issue endpoint, this table performs N+1 requests under the hood.
+Journal entries (comments and field changes) on Redmine issues. Because the Redmine API only returns journals on the single-issue endpoint, this table performs N+1 requests under the hood.
 
 A `created_on` qualifier is required to narrow the date range of returned journals.
 

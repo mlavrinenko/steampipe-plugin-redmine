@@ -1,6 +1,6 @@
 # Redmine Plugin for Steampipe
 
-Use SQL to query issues, journals, and other resources from a [Redmine](https://www.redmine.org) instance.
+Use SQL to query projects, issues, users, and journals from a [Redmine](https://www.redmine.org) instance.
 
 ## Configuration
 

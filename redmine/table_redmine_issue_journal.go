@@ -31,7 +31,7 @@ type issueJournalRow struct {
 func tableRedmineIssueJournal() *plugin.Table {
 	return &plugin.Table{
 		Name:        "redmine_issue_journal",
-		Description: "Journal entries (comments and field changes) on Redmine issues where the current user has participated.",
+		Description: "Journal entries (comments and field changes) on Redmine issues.",
 		List: &plugin.ListConfig{
 			Hydrate: listIssueJournals,
 			KeyColumns: []*plugin.KeyColumn{
@@ -116,16 +116,6 @@ func journalInRange(journalCreatedOn string, dr dateRange) bool {
 	return true
 }
 
-// userParticipated checks if the given user ID authored any journal entry in the list.
-func userParticipated(journals []rm.IssueJournalObject, userID int64) bool {
-	for _, j := range journals {
-		if j.User.ID == userID {
-			return true
-		}
-	}
-	return false
-}
-
 // buildUpdatedOnFilter converts a dateRange into a Redmine API updated_on filter string.
 // Uses the >< (between) operator when both bounds exist, or >= / <= for single bounds.
 func buildUpdatedOnFilter(dr dateRange) string {
@@ -145,14 +135,7 @@ func buildUpdatedOnFilter(dr dateRange) string {
 }
 
 func parseJournalTime(s string) *time.Time {
-	t, err := time.Parse(time.RFC3339, s)
-	if err != nil {
-		t, err = time.Parse("2006-01-02T15:04:05Z", s)
-		if err != nil {
-			return nil
-		}
-	}
-	return &t
+	return parseRedmineTime(s)
 }
 
 //// HYDRATE FUNCTIONS
@@ -163,17 +146,12 @@ func listIssueJournals(ctx context.Context, d *plugin.QueryData, h *plugin.Hydra
 		return nil, err
 	}
 
-	currentUserID, err := getCurrentUserID(ctx, d)
-	if err != nil {
-		return nil, err
-	}
-
 	dr := extractDateRange(d.Quals)
 
 	// If a specific issue_id is provided, fetch just that issue
 	if d.EqualsQuals["issue_id"] != nil {
 		issueID := d.EqualsQuals["issue_id"].GetInt64Value()
-		return fetchAndStreamIssueJournals(ctx, d, client, issueID, currentUserID, dr)
+		return fetchAndStreamIssueJournals(ctx, d, client, issueID, dr)
 	}
 
 	// Build filters for issue listing
@@ -214,7 +192,7 @@ func listIssueJournals(ctx context.Context, d *plugin.QueryData, h *plugin.Hydra
 		}
 
 		for _, issue := range result.Issues {
-			_, err := fetchAndStreamIssueJournals(ctx, d, client, issue.ID, currentUserID, dr)
+			_, err := fetchAndStreamIssueJournals(ctx, d, client, issue.ID, dr)
 			if err != nil {
 				plugin.Logger(ctx).Error("listIssueJournals", "issue_id", issue.ID, "error", err)
 				continue
@@ -239,7 +217,6 @@ func fetchAndStreamIssueJournals(
 	d *plugin.QueryData,
 	client *rm.Context,
 	issueID int64,
-	currentUserID int64,
 	dr dateRange,
 ) (interface{}, error) {
 	issue, _, err := client.IssueSingleGet(issueID, rm.IssueSingleGetRequest{
@@ -254,11 +231,6 @@ func fetchAndStreamIssueJournals(
 	}
 
 	journals := *issue.Journals
-
-	// Only include this issue if the current user participated
-	if !userParticipated(journals, currentUserID) {
-		return nil, nil
-	}
 
 	// Stream all journals within the date range
 	for _, journal := range journals {

@@ -20,7 +20,10 @@ func Plugin(ctx context.Context) *plugin.Plugin {
 			ShouldIgnoreError: isNotFoundError([]string{"404", "not found"}),
 		},
 		TableMap: map[string]*plugin.Table{
+			"redmine_issue":         tableRedmineIssue(),
 			"redmine_issue_journal": tableRedmineIssueJournal(),
+			"redmine_project":       tableRedmineProject(),
+			"redmine_user":          tableRedmineUser(),
 		},
 	}
 	return p

@@ -37,7 +37,7 @@ tidy:
 install: build
     mkdir -p {{plugin_dir}}
     cp {{plugin_name}}.plugin {{plugin_dir}}/
-    cp -r config/* {{install_dir}}/config/ 2>/dev/null || true
+    cp -rn config/* {{install_dir}}/config/ 2>/dev/null || true
     @echo "Plugin installed to {{plugin_dir}}"
     @echo "Ensure {{install_dir}}/config/redmine.spc exists with your credentials"
 
