@@ -32,3 +32,10 @@ nix build       # builds the plugin as a Nix package
 nix develop     # drops you into a dev shell with all tools
 just test       # run unit tests
 ```
+
+## TODO
+
+- Add `Get` config to `redmine_issue_journal` for efficient single-row lookup by `issue_id` + `journal_id`.
+- Add standard columns (`title`, `akas`, `tags`) — debatable for this denormalized journal view, but recommended by Steampipe standards for resource tables.
+- Add `MaxConcurrency` control for the N+1 `IssueSingleGet` calls (requires refactoring to a proper hydrate function or using SDK rate limiters).
+- Expose `status_id` as a `KeyColumn` to allow filtering issues by status.

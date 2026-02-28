@@ -1,3 +1,4 @@
+// Package redmine implements a Steampipe plugin for querying Redmine instances.
 package redmine
 
 import (
@@ -15,6 +16,9 @@ func Plugin(ctx context.Context) *plugin.Plugin {
 		},
 		DefaultTransform:   transform.FromGo().NullIfZero(),
 		DefaultRetryConfig: retryConfig(),
+		DefaultIgnoreConfig: &plugin.IgnoreConfig{
+			ShouldIgnoreError: isNotFoundError([]string{"404", "not found"}),
+		},
 		TableMap: map[string]*plugin.Table{
 			"redmine_issue_journal": tableRedmineIssueJournal(),
 		},

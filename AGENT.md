@@ -24,12 +24,15 @@ steampipe-plugin-redmine/
     errors.go                          # Retry/ignore error predicates
     table_redmine_issue_journal.go     # MVP table: denormalized issue+journal view
     *_test.go                          # Unit tests
+  docs/
+    index.md                           # Plugin documentation
+    tables/
+      redmine_issue_journal.md         # Table documentation with examples
   config/
     redmine.spc                        # Example connection config
   flake.nix                            # Dev shell + plugin package
   flake.lock
   Justfile                             # Build/install/test commands
-  PLAN.md                              # Implementation plan and decisions
   go.mod / go.sum
 ```
 

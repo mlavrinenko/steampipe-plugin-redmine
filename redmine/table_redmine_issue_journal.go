@@ -11,6 +11,8 @@ import (
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin/transform"
 )
 
+//// TABLE DEFINITION
+
 // issueJournalRow is a denormalized row combining issue metadata with a single journal entry.
 type issueJournalRow struct {
 	IssueID      int64
@@ -39,20 +41,24 @@ func tableRedmineIssueJournal() *plugin.Table {
 			},
 		},
 		Columns: []*plugin.Column{
+			// Key columns first
 			{Name: "issue_id", Type: proto.ColumnType_INT, Description: "The issue ID."},
-			{Name: "issue_subject", Type: proto.ColumnType_STRING, Description: "The issue subject."},
 			{Name: "project_id", Type: proto.ColumnType_INT, Description: "The project ID."},
-			{Name: "project_name", Type: proto.ColumnType_STRING, Description: "The project name."},
+			{Name: "created_on", Type: proto.ColumnType_TIMESTAMP, Description: "When the journal entry was created."},
+			// Remaining columns alphabetically
+			{Name: "details", Type: proto.ColumnType_JSON, Description: "Field change details.", Transform: transform.FromField("Details")},
+			{Name: "issue_subject", Type: proto.ColumnType_STRING, Description: "The issue subject."},
 			{Name: "journal_id", Type: proto.ColumnType_INT, Description: "The journal entry ID."},
 			{Name: "notes", Type: proto.ColumnType_STRING, Description: "The journal notes/comment text."},
-			{Name: "created_on", Type: proto.ColumnType_TIMESTAMP, Description: "When the journal entry was created."},
+			{Name: "private_notes", Type: proto.ColumnType_BOOL, Description: "Whether the note is private."},
+			{Name: "project_name", Type: proto.ColumnType_STRING, Description: "The project name."},
 			{Name: "user_id", Type: proto.ColumnType_INT, Description: "ID of the user who created the journal entry."},
 			{Name: "user_name", Type: proto.ColumnType_STRING, Description: "Name of the user who created the journal entry."},
-			{Name: "private_notes", Type: proto.ColumnType_BOOL, Description: "Whether the note is private."},
-			{Name: "details", Type: proto.ColumnType_JSON, Description: "Field change details.", Transform: transform.FromField("Details")},
 		},
 	}
 }
+
+//// HELPER FUNCTIONS
 
 // dateRange represents a half-open time interval [from, to).
 type dateRange struct {
@@ -149,6 +155,8 @@ func parseJournalTime(s string) *time.Time {
 	return &t
 }
 
+//// HYDRATE FUNCTIONS
+
 func listIssueJournals(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
 	client, err := connect(ctx, d)
 	if err != nil {
@@ -187,9 +195,12 @@ func listIssueJournals(ctx context.Context, d *plugin.QueryData, h *plugin.Hydra
 	// Sort by updated_on descending for most relevant results first
 	sort := rm.IssueGetRequestSortInit().Set("updated_on", true)
 
-	// Paginate through issues
+	// Paginate through issues; reduce page size if query has a small limit
 	var offset int64
-	const pageSize int64 = 100
+	var pageSize int64 = 100
+	if d.QueryContext.Limit != nil && *d.QueryContext.Limit < pageSize {
+		pageSize = *d.QueryContext.Limit
+	}
 
 	for {
 		result, _, err := client.IssuesMultiGet(rm.IssueMultiGetRequest{
