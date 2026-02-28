@@ -7,25 +7,22 @@ import (
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 )
 
-func shouldRetryError(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData, err error) bool {
+// isRetryableError returns true if the error message indicates a retryable condition
+// (rate limiting or service unavailable).
+func isRetryableError(err error) bool {
 	if err == nil {
 		return false
 	}
 	msg := err.Error()
+	return strings.Contains(msg, "429") || strings.Contains(msg, "503")
+}
 
-	// Retry on rate limiting
-	if strings.Contains(msg, "429") {
-		plugin.Logger(ctx).Debug("shouldRetryError", "rate_limit", err)
-		return true
+func shouldRetryError(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData, err error) bool {
+	retry := isRetryableError(err)
+	if retry {
+		plugin.Logger(ctx).Debug("shouldRetryError", "retrying", err)
 	}
-
-	// Retry on service unavailable
-	if strings.Contains(msg, "503") {
-		plugin.Logger(ctx).Debug("shouldRetryError", "service_unavailable", err)
-		return true
-	}
-
-	return false
+	return retry
 }
 
 func retryConfig() *plugin.RetryConfig {

@@ -2,9 +2,25 @@
 
 Journal entries (comments and field changes) on Redmine issues. Because the Redmine API only returns journals on the single-issue endpoint, this table performs N+1 requests under the hood.
 
-A `created_on` qualifier is required to narrow the date range of returned journals.
+You can get a specific journal entry by `issue_id` and `journal_id`, or list journals with a required `created_on` date range qualifier.
 
 ## Examples
+
+### Get a specific journal entry
+
+```sql
+select
+  journal_id,
+  issue_id,
+  user_name,
+  notes,
+  created_on
+from
+  redmine_issue_journal
+where
+  issue_id = 12345
+  and journal_id = 67890;
+```
 
 ### Basic info
 

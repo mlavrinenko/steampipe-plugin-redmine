@@ -14,3 +14,16 @@ func parseRedmineTime(s string) *time.Time {
 	}
 	return &t
 }
+
+// parseRedmineDate parses a Redmine API date string (YYYY-MM-DD) into *time.Time.
+// Returns nil if the input is nil, empty, or unparseable.
+func parseRedmineDate(s *string) *time.Time {
+	if s == nil || *s == "" {
+		return nil
+	}
+	t, err := time.Parse("2006-01-02", *s)
+	if err != nil {
+		return nil
+	}
+	return &t
+}

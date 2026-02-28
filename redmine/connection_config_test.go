@@ -6,6 +6,9 @@ import (
 
 func TestGetConfig_NilConnection(t *testing.T) {
 	config := GetConfig(nil)
+	if config == nil {
+		t.Fatal("expected non-nil config, got nil")
+	}
 	if config.Endpoint != nil {
 		t.Errorf("expected nil Endpoint, got %v", config.Endpoint)
 	}

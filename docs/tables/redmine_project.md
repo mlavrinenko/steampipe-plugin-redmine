@@ -46,11 +46,14 @@ from
 
 ### List sub-projects of a parent
 
+Note: `parent_id` is filtered client-side since the Redmine API does not support it as a query parameter.
+
 ```sql
 select
   id,
   name,
-  identifier
+  identifier,
+  parent_id
 from
   redmine_project
 where

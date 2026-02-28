@@ -48,6 +48,21 @@ where
   assigned_to_id = 42;
 ```
 
+### List issues assigned to me (the API key owner)
+
+```sql
+select
+  id,
+  subject,
+  project_name,
+  status_name,
+  priority_name
+from
+  redmine_issue
+where
+  assigned_to_me = true;
+```
+
 ### List overdue issues
 
 ```sql

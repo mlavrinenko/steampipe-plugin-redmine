@@ -18,21 +18,27 @@ activity (journal entries) from issues to help write time-entry reports.
 steampipe-plugin-redmine/
   main.go                              # Entry point: plugin.Serve()
   redmine/
-    plugin.go                          # Plugin definition, table map
+    plugin.go                          # Plugin definition, table map (7 tables)
     connection_config.go               # Config struct (endpoint, api_key)
     client.go                          # Redmine client factory with caching
     errors.go                          # Retry/ignore error predicates
-    table_redmine_issue_journal.go     # MVP table: denormalized issue+journal view
+    helpers.go                         # Time/date parsing utilities
+    table_redmine_issue.go             # Issues table
+    table_redmine_issue_journal.go     # Denormalized issue+journal view
+    table_redmine_issue_status.go      # Issue status reference table
+    table_redmine_project.go           # Projects table
+    table_redmine_time_entry.go        # Time entries table
+    table_redmine_tracker.go           # Tracker reference table
+    table_redmine_user.go              # Users table
     *_test.go                          # Unit tests
   docs/
     index.md                           # Plugin documentation
-    tables/
-      redmine_issue_journal.md         # Table documentation with examples
+    tables/                            # Per-table documentation with examples
   config/
     redmine.spc                        # Example connection config
   flake.nix                            # Dev shell + plugin package
   flake.lock
-  Justfile                             # Build/install/test commands
+  Justfile                             # Build/install/test/lint commands
   go.mod / go.sum
 ```
 

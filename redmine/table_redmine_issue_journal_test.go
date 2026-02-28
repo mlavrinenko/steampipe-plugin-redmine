@@ -6,7 +6,7 @@ import (
 )
 
 func TestExtractDateRange(t *testing.T) {
-	// extractDateRange is tested indirectly through journalInRange and buildUpdatedOnFilter
+	// extractDateRange is tested indirectly through journalInRange and buildDateFilter
 	// since it requires plugin.KeyColumnQualMap which is hard to construct in unit tests.
 	// The pure functions below are tested directly.
 }
@@ -83,7 +83,7 @@ func TestJournalInRange(t *testing.T) {
 	}
 }
 
-func TestBuildUpdatedOnFilter(t *testing.T) {
+func TestBuildDateFilter(t *testing.T) {
 	from := time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)
 	to := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
 
@@ -111,9 +111,9 @@ func TestBuildUpdatedOnFilter(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			result := buildUpdatedOnFilter(tc.dr)
+			result := buildDateFilter(tc.dr)
 			if result != tc.expected {
-				t.Errorf("buildUpdatedOnFilter(%+v) = %q, want %q", tc.dr, result, tc.expected)
+				t.Errorf("buildDateFilter(%+v) = %q, want %q", tc.dr, result, tc.expected)
 			}
 		})
 	}

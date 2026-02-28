@@ -3,6 +3,7 @@ package redmine
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	rm "github.com/nixys/nxs-go-redmine/v5"
@@ -10,6 +11,9 @@ import (
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin/transform"
 )
+
+// maxConcurrentIssueFetches limits parallel IssueSingleGet calls for journal retrieval.
+const maxConcurrentIssueFetches = 5
 
 //// TABLE DEFINITION
 
@@ -32,6 +36,10 @@ func tableRedmineIssueJournal() *plugin.Table {
 	return &plugin.Table{
 		Name:        "redmine_issue_journal",
 		Description: "Journal entries (comments and field changes) on Redmine issues.",
+		Get: &plugin.GetConfig{
+			KeyColumns: plugin.AllColumns([]string{"issue_id", "journal_id"}),
+			Hydrate:    getIssueJournal,
+		},
 		List: &plugin.ListConfig{
 			Hydrate: listIssueJournals,
 			KeyColumns: []*plugin.KeyColumn{
@@ -66,15 +74,20 @@ type dateRange struct {
 	to   *time.Time
 }
 
-// extractDateRange parses created_on qualifiers into a dateRange.
-func extractDateRange(quals plugin.KeyColumnQualMap) dateRange {
+// extractDateRange parses timestamp qualifiers for the given column into a dateRange.
+func extractDateRange(quals plugin.KeyColumnQualMap, column ...string) dateRange {
+	col := "created_on"
+	if len(column) > 0 {
+		col = column[0]
+	}
+
 	var dr dateRange
 
-	if quals["created_on"] == nil {
+	if quals[col] == nil {
 		return dr
 	}
 
-	for _, q := range quals["created_on"].Quals {
+	for _, q := range quals[col].Quals {
 		ts := q.Value.GetTimestampValue().AsTime()
 		switch q.Operator {
 		case ">=":
@@ -116,9 +129,9 @@ func journalInRange(journalCreatedOn string, dr dateRange) bool {
 	return true
 }
 
-// buildUpdatedOnFilter converts a dateRange into a Redmine API updated_on filter string.
+// buildDateFilter converts a dateRange into a Redmine API date filter string.
 // Uses the >< (between) operator when both bounds exist, or >= / <= for single bounds.
-func buildUpdatedOnFilter(dr dateRange) string {
+func buildDateFilter(dr dateRange) string {
 	layout := "2006-01-02T15:04:05Z"
 
 	if dr.from != nil && dr.to != nil {
@@ -134,11 +147,48 @@ func buildUpdatedOnFilter(dr dateRange) string {
 	return ""
 }
 
-func parseJournalTime(s string) *time.Time {
-	return parseRedmineTime(s)
-}
-
 //// HYDRATE FUNCTIONS
+
+func getIssueJournal(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
+	client, err := connect(ctx, d)
+	if err != nil {
+		return nil, err
+	}
+
+	issueID := d.EqualsQuals["issue_id"].GetInt64Value()
+	journalID := d.EqualsQuals["journal_id"].GetInt64Value()
+
+	issue, _, err := client.IssueSingleGet(issueID, rm.IssueSingleGetRequest{
+		Includes: []rm.IssueInclude{rm.IssueIncludeJournals},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get issue %d: %w", issueID, err)
+	}
+
+	if issue.Journals == nil {
+		return nil, nil
+	}
+
+	for _, journal := range *issue.Journals {
+		if journal.ID == journalID {
+			return issueJournalRow{
+				IssueID:      issue.ID,
+				IssueSubject: issue.Subject,
+				ProjectID:    issue.Project.ID,
+				ProjectName:  issue.Project.Name,
+				JournalID:    journal.ID,
+				Notes:        journal.Notes,
+				CreatedOn:    parseRedmineTime(journal.CreatedOn),
+				UserID:       journal.User.ID,
+				UserName:     journal.User.Name,
+				PrivateNotes: journal.PrivateNotes,
+				Details:      journal.Details,
+			}, nil
+		}
+	}
+
+	return nil, nil
+}
 
 func listIssueJournals(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
 	client, err := connect(ctx, d)
@@ -158,7 +208,7 @@ func listIssueJournals(ctx context.Context, d *plugin.QueryData, h *plugin.Hydra
 	filters := rm.IssueGetRequestFiltersInit()
 
 	// Use updated_on to narrow down candidate issues
-	updatedOnFilter := buildUpdatedOnFilter(dr)
+	updatedOnFilter := buildDateFilter(dr)
 	if updatedOnFilter != "" {
 		filters.FieldAdd("updated_on", updatedOnFilter)
 	}
@@ -191,16 +241,42 @@ func listIssueJournals(ctx context.Context, d *plugin.QueryData, h *plugin.Hydra
 			return nil, fmt.Errorf("failed to list issues: %w", err)
 		}
 
+		// Fetch journals concurrently with bounded parallelism
+		sem := make(chan struct{}, maxConcurrentIssueFetches)
+		var wg sync.WaitGroup
+		var fetchErr error
+		var mu sync.Mutex
+
 		for _, issue := range result.Issues {
-			_, err := fetchAndStreamIssueJournals(ctx, d, client, issue.ID, dr)
-			if err != nil {
-				plugin.Logger(ctx).Error("listIssueJournals", "issue_id", issue.ID, "error", err)
-				continue
+			if d.RowsRemaining(ctx) == 0 {
+				break
 			}
 
-			if d.RowsRemaining(ctx) == 0 {
-				return nil, nil
-			}
+			sem <- struct{}{}
+			wg.Add(1)
+			go func(issueID int64) {
+				defer wg.Done()
+				defer func() { <-sem }()
+
+				_, err := fetchAndStreamIssueJournals(ctx, d, client, issueID, dr)
+				if err != nil {
+					mu.Lock()
+					if fetchErr == nil {
+						fetchErr = err
+					}
+					mu.Unlock()
+					plugin.Logger(ctx).Error("listIssueJournals", "issue_id", issueID, "error", err)
+				}
+			}(issue.ID)
+		}
+		wg.Wait()
+
+		if fetchErr != nil {
+			return nil, fetchErr
+		}
+
+		if d.RowsRemaining(ctx) == 0 {
+			return nil, nil
 		}
 
 		if offset+result.Limit >= result.TotalCount {
@@ -245,7 +321,7 @@ func fetchAndStreamIssueJournals(
 			ProjectName:  issue.Project.Name,
 			JournalID:    journal.ID,
 			Notes:        journal.Notes,
-			CreatedOn:    parseJournalTime(journal.CreatedOn),
+			CreatedOn:    parseRedmineTime(journal.CreatedOn),
 			UserID:       journal.User.ID,
 			UserName:     journal.User.Name,
 			PrivateNotes: journal.PrivateNotes,

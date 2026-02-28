@@ -28,7 +28,7 @@ func TestIssueRowFromObject(t *testing.T) {
 			StartDate:           &startDate,
 			DueDate:             &dueDate,
 			DoneRatio:           50,
-			IsPrivate:           0,
+			IsPrivate:           0, // maps to false
 			EstimatedHours:      &hours,
 			TotalEstimatedHours: &totalHours,
 			SpentHours:          3.5,
@@ -61,8 +61,8 @@ func TestIssueRowFromObject(t *testing.T) {
 		if row.ParentID != 50 {
 			t.Errorf("ParentID = %d, want 50", row.ParentID)
 		}
-		if row.StartDate == nil || *row.StartDate != "2026-02-01" {
-			t.Errorf("StartDate = %v, want '2026-02-01'", row.StartDate)
+		if row.StartDate == nil || row.StartDate.Format("2006-01-02") != "2026-02-01" {
+			t.Errorf("StartDate = %v, want 2026-02-01", row.StartDate)
 		}
 		if row.EstimatedHours == nil || *row.EstimatedHours != 8.5 {
 			t.Errorf("EstimatedHours = %v, want 8.5", row.EstimatedHours)

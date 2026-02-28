@@ -22,7 +22,10 @@ func Plugin(ctx context.Context) *plugin.Plugin {
 		TableMap: map[string]*plugin.Table{
 			"redmine_issue":         tableRedmineIssue(),
 			"redmine_issue_journal": tableRedmineIssueJournal(),
+			"redmine_issue_status":  tableRedmineIssueStatus(),
 			"redmine_project":       tableRedmineProject(),
+			"redmine_time_entry":    tableRedmineTimeEntry(),
+			"redmine_tracker":       tableRedmineTracker(),
 			"redmine_user":          tableRedmineUser(),
 		},
 	}

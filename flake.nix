@@ -70,6 +70,7 @@
               pkgs.gopls
               pkgs.gotools
               pkgs.go-tools
+              pkgs.golangci-lint
               pkgs.delve
               pkgs.just
               pkgs.steampipe

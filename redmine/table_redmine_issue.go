@@ -8,6 +8,7 @@ import (
 	rm "github.com/nixys/nxs-go-redmine/v5"
 	"github.com/turbot/steampipe-plugin-sdk/v5/grpc/proto"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
+	"github.com/turbot/steampipe-plugin-sdk/v5/plugin/transform"
 )
 
 //// TABLE DEFINITION
@@ -34,10 +35,10 @@ type issueRow struct {
 	ParentID            int64
 	Subject             string
 	Description         string
-	StartDate           *string
-	DueDate             *string
+	StartDate           *time.Time
+	DueDate             *time.Time
 	DoneRatio           int64
-	IsPrivate           int64
+	IsPrivate           bool
 	EstimatedHours      *float64
 	TotalEstimatedHours *float64
 	SpentHours          float64
@@ -63,6 +64,9 @@ func tableRedmineIssue() *plugin.Table {
 				{Name: "tracker_id", Require: plugin.Optional, Operators: []string{"="}},
 				{Name: "status_id", Require: plugin.Optional, Operators: []string{"="}},
 				{Name: "assigned_to_id", Require: plugin.Optional, Operators: []string{"="}},
+				{Name: "assigned_to_me", Require: plugin.Optional, Operators: []string{"="}},
+				{Name: "created_on", Require: plugin.Optional, Operators: []string{">=", ">", "<", "<="}},
+				{Name: "updated_on", Require: plugin.Optional, Operators: []string{">=", ">", "<", "<="}},
 			},
 		},
 		Columns: []*plugin.Column{
@@ -72,6 +76,7 @@ func tableRedmineIssue() *plugin.Table {
 			{Name: "tracker_id", Type: proto.ColumnType_INT, Description: "The tracker ID."},
 			{Name: "status_id", Type: proto.ColumnType_INT, Description: "The issue status ID."},
 			{Name: "assigned_to_id", Type: proto.ColumnType_INT, Description: "The assigned user ID."},
+			{Name: "assigned_to_me", Type: proto.ColumnType_BOOL, Description: "If true, filter to issues assigned to the API key owner. Only useful as a filter qualifier.", Transform: transform.FromConstant(false)},
 			// Remaining columns alphabetically
 			{Name: "assigned_to_name", Type: proto.ColumnType_STRING, Description: "The assigned user name."},
 			{Name: "author_id", Type: proto.ColumnType_INT, Description: "The author user ID."},
@@ -83,17 +88,17 @@ func tableRedmineIssue() *plugin.Table {
 			{Name: "custom_fields", Type: proto.ColumnType_JSON, Description: "Custom field values."},
 			{Name: "description", Type: proto.ColumnType_STRING, Description: "The issue description."},
 			{Name: "done_ratio", Type: proto.ColumnType_INT, Description: "The percentage done (0-100)."},
-			{Name: "due_date", Type: proto.ColumnType_STRING, Description: "The due date (YYYY-MM-DD)."},
+			{Name: "due_date", Type: proto.ColumnType_TIMESTAMP, Description: "The due date."},
 			{Name: "estimated_hours", Type: proto.ColumnType_DOUBLE, Description: "Estimated hours for the issue."},
 			{Name: "fixed_version_id", Type: proto.ColumnType_INT, Description: "The target version ID."},
 			{Name: "fixed_version_name", Type: proto.ColumnType_STRING, Description: "The target version name."},
-			{Name: "is_private", Type: proto.ColumnType_INT, Description: "Whether the issue is private."},
+			{Name: "is_private", Type: proto.ColumnType_BOOL, Description: "Whether the issue is private."},
 			{Name: "parent_id", Type: proto.ColumnType_INT, Description: "The parent issue ID."},
 			{Name: "priority_id", Type: proto.ColumnType_INT, Description: "The priority ID."},
 			{Name: "priority_name", Type: proto.ColumnType_STRING, Description: "The priority name."},
 			{Name: "project_name", Type: proto.ColumnType_STRING, Description: "The project name."},
 			{Name: "spent_hours", Type: proto.ColumnType_DOUBLE, Description: "Hours spent on the issue."},
-			{Name: "start_date", Type: proto.ColumnType_STRING, Description: "The start date (YYYY-MM-DD)."},
+			{Name: "start_date", Type: proto.ColumnType_TIMESTAMP, Description: "The start date."},
 			{Name: "status_is_closed", Type: proto.ColumnType_BOOL, Description: "Whether the status represents a closed state."},
 			{Name: "status_name", Type: proto.ColumnType_STRING, Description: "The issue status name."},
 			{Name: "subject", Type: proto.ColumnType_STRING, Description: "The issue subject/title."},
@@ -123,10 +128,10 @@ func issueRowFromObject(issue rm.IssueObject) issueRow {
 		AuthorName:          issue.Author.Name,
 		Subject:             issue.Subject,
 		Description:         issue.Description,
-		StartDate:           issue.StartDate,
-		DueDate:             issue.DueDate,
+		StartDate:           parseRedmineDate(issue.StartDate),
+		DueDate:             parseRedmineDate(issue.DueDate),
 		DoneRatio:           issue.DoneRatio,
-		IsPrivate:           issue.IsPrivate,
+		IsPrivate:           issue.IsPrivate != 0,
 		EstimatedHours:      issue.EstimatedHours,
 		TotalEstimatedHours: issue.TotalEstimatedHours,
 		SpentHours:          issue.SpentHours,
@@ -196,6 +201,23 @@ func listIssues(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData)
 	}
 	if d.EqualsQuals["assigned_to_id"] != nil {
 		filters.FieldAdd("assigned_to_id", fmt.Sprintf("%d", d.EqualsQuals["assigned_to_id"].GetInt64Value()))
+	}
+	if d.EqualsQuals["assigned_to_me"] != nil && d.EqualsQuals["assigned_to_me"].GetBoolValue() {
+		filters.FieldAdd("assigned_to_id", "me")
+	}
+
+	// Date range filters
+	if d.Quals["created_on"] != nil {
+		dr := extractDateRange(d.Quals)
+		if f := buildDateFilter(dr); f != "" {
+			filters.FieldAdd("created_on", f)
+		}
+	}
+	if d.Quals["updated_on"] != nil {
+		dr := extractDateRange(d.Quals, "updated_on")
+		if f := buildDateFilter(dr); f != "" {
+			filters.FieldAdd("updated_on", f)
+		}
 	}
 
 	sort := rm.IssueGetRequestSortInit().Set("updated_on", true)

@@ -13,10 +13,13 @@ func ConfigInstance() interface{} {
 	return &redmineConfig{}
 }
 
-func GetConfig(connection *plugin.Connection) redmineConfig {
+func GetConfig(connection *plugin.Connection) *redmineConfig {
 	if connection == nil || connection.Config == nil {
-		return redmineConfig{}
+		return &redmineConfig{}
 	}
-	config, _ := connection.Config.(redmineConfig)
+	config, ok := connection.Config.(*redmineConfig)
+	if !ok {
+		return &redmineConfig{}
+	}
 	return config
 }

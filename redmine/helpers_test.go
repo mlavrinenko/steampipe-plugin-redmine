@@ -2,6 +2,32 @@ package redmine
 
 import "testing"
 
+func TestParseRedmineDate(t *testing.T) {
+	date := "2026-02-15"
+	empty := ""
+
+	tests := map[string]struct {
+		input    *string
+		expected bool // whether parsing should succeed (non-nil result)
+	}{
+		"valid date": {input: &date, expected: true},
+		"nil":        {input: nil, expected: false},
+		"empty":      {input: &empty, expected: false},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			result := parseRedmineDate(tc.input)
+			if (result != nil) != tc.expected {
+				t.Errorf("parseRedmineDate(%v) = %v, want non-nil=%v", tc.input, result, tc.expected)
+			}
+			if result != nil && result.Format("2006-01-02") != "2026-02-15" {
+				t.Errorf("parseRedmineDate(%v) = %v, want 2026-02-15", tc.input, result)
+			}
+		})
+	}
+}
+
 func TestParseRedmineTime(t *testing.T) {
 	tests := map[string]struct {
 		input    string
