@@ -6,22 +6,6 @@ You can get a specific journal entry by `issue_id` and `journal_id`, or list jou
 
 ## Examples
 
-### Get a specific journal entry
-
-```sql
-select
-  journal_id,
-  issue_id,
-  user_name,
-  notes,
-  created_on
-from
-  redmine_issue_journal
-where
-  issue_id = 12345
-  and journal_id = 67890;
-```
-
 ### Basic info
 
 ```sql
@@ -37,6 +21,22 @@ from
 where
   created_on >= '2026-02-01'
   and created_on < '2026-03-01';
+```
+
+### Get a specific journal entry
+
+```sql
+select
+  journal_id,
+  issue_id,
+  user_name,
+  notes,
+  created_on
+from
+  redmine_issue_journal
+where
+  issue_id = 12345
+  and journal_id = 67890;
 ```
 
 ### List journal entries for a specific issue

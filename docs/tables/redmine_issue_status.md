@@ -4,7 +4,7 @@ Issue statuses defined in the Redmine instance. This is a reference table useful
 
 ## Examples
 
-### List all statuses
+### Basic info
 
 ```sql
 select
@@ -25,6 +25,19 @@ from
   redmine_issue_status
 where
   is_closed = true;
+```
+
+### Get a specific status by ID
+
+```sql
+select
+  id,
+  name,
+  is_closed
+from
+  redmine_issue_status
+where
+  id = 5;
 ```
 
 ### Count issues per status

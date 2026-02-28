@@ -63,6 +63,7 @@ func tableRedmineIssue() *plugin.Table {
 				{Name: "project_id", Require: plugin.Optional, Operators: []string{"="}},
 				{Name: "tracker_id", Require: plugin.Optional, Operators: []string{"="}},
 				{Name: "status_id", Require: plugin.Optional, Operators: []string{"="}},
+				{Name: "priority_id", Require: plugin.Optional, Operators: []string{"="}},
 				{Name: "assigned_to_id", Require: plugin.Optional, Operators: []string{"="}},
 				{Name: "assigned_to_me", Require: plugin.Optional, Operators: []string{"="}},
 				{Name: "created_on", Require: plugin.Optional, Operators: []string{">=", ">", "<", "<="}},
@@ -76,7 +77,7 @@ func tableRedmineIssue() *plugin.Table {
 			{Name: "tracker_id", Type: proto.ColumnType_INT, Description: "The tracker ID."},
 			{Name: "status_id", Type: proto.ColumnType_INT, Description: "The issue status ID."},
 			{Name: "assigned_to_id", Type: proto.ColumnType_INT, Description: "The assigned user ID."},
-			{Name: "assigned_to_me", Type: proto.ColumnType_BOOL, Description: "If true, filter to issues assigned to the API key owner. Only useful as a filter qualifier.", Transform: transform.FromConstant(false)},
+			{Name: "assigned_to_me", Type: proto.ColumnType_BOOL, Description: "Filter-only column: if true, return issues assigned to the API key owner. Always returns false in query results.", Transform: transform.FromConstant(false)},
 			// Remaining columns alphabetically
 			{Name: "assigned_to_name", Type: proto.ColumnType_STRING, Description: "The assigned user name."},
 			{Name: "author_id", Type: proto.ColumnType_INT, Description: "The author user ID."},
@@ -106,6 +107,8 @@ func tableRedmineIssue() *plugin.Table {
 			{Name: "total_spent_hours", Type: proto.ColumnType_DOUBLE, Description: "Total spent hours including subtasks."},
 			{Name: "tracker_name", Type: proto.ColumnType_STRING, Description: "The tracker name."},
 			{Name: "updated_on", Type: proto.ColumnType_TIMESTAMP, Description: "When the issue was last updated."},
+			// Standard columns
+			{Name: "title", Type: proto.ColumnType_STRING, Description: "The display name for this resource.", Transform: transform.FromField("Subject")},
 		},
 	}
 }
@@ -199,6 +202,9 @@ func listIssues(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData)
 		// Include all statuses (Redmine defaults to open-only)
 		filters.FieldAdd("status_id", "*")
 	}
+	if d.EqualsQuals["priority_id"] != nil {
+		filters.FieldAdd("priority_id", fmt.Sprintf("%d", d.EqualsQuals["priority_id"].GetInt64Value()))
+	}
 	if d.EqualsQuals["assigned_to_id"] != nil {
 		filters.FieldAdd("assigned_to_id", fmt.Sprintf("%d", d.EqualsQuals["assigned_to_id"].GetInt64Value()))
 	}
@@ -208,7 +214,7 @@ func listIssues(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData)
 
 	// Date range filters
 	if d.Quals["created_on"] != nil {
-		dr := extractDateRange(d.Quals)
+		dr := extractDateRange(d.Quals, "created_on")
 		if f := buildDateFilter(dr); f != "" {
 			filters.FieldAdd("created_on", f)
 		}

@@ -24,6 +24,10 @@ func tableRedmineTracker() *plugin.Table {
 	return &plugin.Table{
 		Name:        "redmine_tracker",
 		Description: "Trackers in the Redmine instance.",
+		Get: &plugin.GetConfig{
+			KeyColumns: plugin.SingleColumn("id"),
+			Hydrate:    getTracker,
+		},
 		List: &plugin.ListConfig{
 			Hydrate: listTrackers,
 		},
@@ -52,6 +56,28 @@ func trackerRowFromObject(t rm.TrackerObject) trackerRow {
 }
 
 //// HYDRATE FUNCTIONS
+
+func getTracker(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
+	client, err := connect(ctx, d)
+	if err != nil {
+		return nil, err
+	}
+
+	trackerID := d.EqualsQuals["id"].GetInt64Value()
+
+	trackers, _, err := client.TrackerAllGet()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list trackers: %w", err)
+	}
+
+	for _, tracker := range trackers {
+		if tracker.ID == trackerID {
+			return trackerRowFromObject(tracker), nil
+		}
+	}
+
+	return nil, nil
+}
 
 func listTrackers(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
 	client, err := connect(ctx, d)

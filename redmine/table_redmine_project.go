@@ -9,6 +9,7 @@ import (
 	rm "github.com/nixys/nxs-go-redmine/v5"
 	"github.com/turbot/steampipe-plugin-sdk/v5/grpc/proto"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
+	"github.com/turbot/steampipe-plugin-sdk/v5/plugin/transform"
 )
 
 //// TABLE DEFINITION
@@ -75,6 +76,8 @@ func tableRedmineProject() *plugin.Table {
 			{Name: "time_entry_activities", Type: proto.ColumnType_JSON, Description: "Time entry activities."},
 			{Name: "trackers", Type: proto.ColumnType_JSON, Description: "Trackers."},
 			{Name: "updated_on", Type: proto.ColumnType_TIMESTAMP, Description: "When the project was last updated."},
+			// Standard columns
+			{Name: "title", Type: proto.ColumnType_STRING, Description: "The display name for this resource.", Transform: transform.FromField("Name")},
 		},
 	}
 }

@@ -4,6 +4,21 @@ Issues in the Redmine instance. By default, both open and closed issues are retu
 
 ## Examples
 
+### Basic info
+
+```sql
+select
+  id,
+  subject,
+  project_name,
+  status_name,
+  priority_name,
+  assigned_to_name,
+  updated_on
+from
+  redmine_issue;
+```
+
 ### List open issues in a project
 
 ```sql
@@ -31,21 +46,6 @@ from
   redmine_issue
 where
   id = 12345;
-```
-
-### List issues assigned to a user
-
-```sql
-select
-  id,
-  subject,
-  project_name,
-  status_name,
-  priority_name
-from
-  redmine_issue
-where
-  assigned_to_id = 42;
 ```
 
 ### List issues assigned to me (the API key owner)
@@ -77,6 +77,21 @@ from
 where
   status_is_closed = false
   and due_date < current_date::text;
+```
+
+### List high-priority issues
+
+```sql
+select
+  id,
+  subject,
+  project_name,
+  status_name,
+  assigned_to_name
+from
+  redmine_issue
+where
+  priority_id = 4;
 ```
 
 ### Join issues with journals to find activity by user email

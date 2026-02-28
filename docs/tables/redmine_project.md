@@ -4,6 +4,20 @@ Projects in the Redmine instance.
 
 ## Examples
 
+### Basic info
+
+```sql
+select
+  id,
+  identifier,
+  name,
+  status,
+  is_public,
+  created_on
+from
+  redmine_project;
+```
+
 ### List all active projects
 
 ```sql

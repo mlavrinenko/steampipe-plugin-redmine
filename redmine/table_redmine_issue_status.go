@@ -21,6 +21,10 @@ func tableRedmineIssueStatus() *plugin.Table {
 	return &plugin.Table{
 		Name:        "redmine_issue_status",
 		Description: "Issue statuses in the Redmine instance.",
+		Get: &plugin.GetConfig{
+			KeyColumns: plugin.SingleColumn("id"),
+			Hydrate:    getIssueStatus,
+		},
 		List: &plugin.ListConfig{
 			Hydrate: listIssueStatuses,
 		},
@@ -43,6 +47,28 @@ func issueStatusRowFromObject(s rm.IssueStatusObject) issueStatusRow {
 }
 
 //// HYDRATE FUNCTIONS
+
+func getIssueStatus(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
+	client, err := connect(ctx, d)
+	if err != nil {
+		return nil, err
+	}
+
+	statusID := d.EqualsQuals["id"].GetInt64Value()
+
+	statuses, _, err := client.IssueStatusAllGet()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list issue statuses: %w", err)
+	}
+
+	for _, status := range statuses {
+		if status.ID == statusID {
+			return issueStatusRowFromObject(status), nil
+		}
+	}
+
+	return nil, nil
+}
 
 func listIssueStatuses(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
 	client, err := connect(ctx, d)

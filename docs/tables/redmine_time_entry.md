@@ -1,8 +1,23 @@
 # Table: redmine_time_entry
 
-Time entries in the Redmine instance. Can be filtered by project, user, activity, and date range.
+Time entries in the Redmine instance. Can be filtered by project, issue, user, activity, and date range.
 
 ## Examples
+
+### Basic info
+
+```sql
+select
+  id,
+  project_name,
+  issue_id,
+  user_name,
+  hours,
+  comments,
+  spent_on
+from
+  redmine_time_entry;
+```
 
 ### Get a time entry by ID
 
@@ -19,6 +34,24 @@ from
   redmine_time_entry
 where
   id = 123;
+```
+
+### List time entries for a specific issue
+
+```sql
+select
+  id,
+  user_name,
+  activity_name,
+  hours,
+  comments,
+  spent_on
+from
+  redmine_time_entry
+where
+  issue_id = 12345
+order by
+  spent_on;
 ```
 
 ### List time entries for a project in a date range

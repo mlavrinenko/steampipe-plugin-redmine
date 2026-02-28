@@ -3,13 +3,13 @@ package redmine
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	rm "github.com/nixys/nxs-go-redmine/v5"
 	"github.com/turbot/steampipe-plugin-sdk/v5/grpc/proto"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin/transform"
+	"golang.org/x/sync/errgroup"
 )
 
 // maxConcurrentIssueFetches limits parallel IssueSingleGet calls for journal retrieval.
@@ -241,38 +241,30 @@ func listIssueJournals(ctx context.Context, d *plugin.QueryData, h *plugin.Hydra
 			return nil, fmt.Errorf("failed to list issues: %w", err)
 		}
 
-		// Fetch journals concurrently with bounded parallelism
-		sem := make(chan struct{}, maxConcurrentIssueFetches)
-		var wg sync.WaitGroup
-		var fetchErr error
-		var mu sync.Mutex
+		// Fetch journals concurrently with bounded parallelism and context cancellation
+		g, gctx := errgroup.WithContext(ctx)
+		g.SetLimit(maxConcurrentIssueFetches)
 
 		for _, issue := range result.Issues {
 			if d.RowsRemaining(ctx) == 0 {
 				break
 			}
 
-			sem <- struct{}{}
-			wg.Add(1)
-			go func(issueID int64) {
-				defer wg.Done()
-				defer func() { <-sem }()
-
-				_, err := fetchAndStreamIssueJournals(ctx, d, client, issueID, dr)
+			issueID := issue.ID
+			g.Go(func() error {
+				if gctx.Err() != nil {
+					return gctx.Err()
+				}
+				_, err := fetchAndStreamIssueJournals(gctx, d, client, issueID, dr)
 				if err != nil {
-					mu.Lock()
-					if fetchErr == nil {
-						fetchErr = err
-					}
-					mu.Unlock()
 					plugin.Logger(ctx).Error("listIssueJournals", "issue_id", issueID, "error", err)
 				}
-			}(issue.ID)
+				return err
+			})
 		}
-		wg.Wait()
 
-		if fetchErr != nil {
-			return nil, fetchErr
+		if err := g.Wait(); err != nil {
+			return nil, err
 		}
 
 		if d.RowsRemaining(ctx) == 0 {

@@ -8,6 +8,7 @@ import (
 	rm "github.com/nixys/nxs-go-redmine/v5"
 	"github.com/turbot/steampipe-plugin-sdk/v5/grpc/proto"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
+	"github.com/turbot/steampipe-plugin-sdk/v5/plugin/transform"
 )
 
 //// TABLE DEFINITION
@@ -60,6 +61,8 @@ func tableRedmineUser() *plugin.Table {
 			{Name: "memberships", Type: proto.ColumnType_JSON, Description: "Project memberships (populated only on single-user get)."},
 			{Name: "passwd_changed_on", Type: proto.ColumnType_TIMESTAMP, Description: "When the password was last changed."},
 			{Name: "twofa_scheme", Type: proto.ColumnType_STRING, Description: "Two-factor authentication scheme."},
+			// Standard columns
+			{Name: "title", Type: proto.ColumnType_STRING, Description: "The display name for this resource.", Transform: transform.FromField("Login")},
 		},
 	}
 }

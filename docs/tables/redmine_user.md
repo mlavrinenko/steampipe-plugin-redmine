@@ -6,6 +6,20 @@ Groups and memberships are only populated when querying a single user by ID (`wh
 
 ## Examples
 
+### Basic info
+
+```sql
+select
+  id,
+  login,
+  first_name,
+  last_name,
+  mail,
+  status
+from
+  redmine_user;
+```
+
 ### List all active users
 
 ```sql

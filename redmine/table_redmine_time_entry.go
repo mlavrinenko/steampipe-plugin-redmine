@@ -3,6 +3,9 @@ package redmine
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
+	"strconv"
 	"time"
 
 	rm "github.com/nixys/nxs-go-redmine/v5"
@@ -40,6 +43,7 @@ func tableRedmineTimeEntry() *plugin.Table {
 			Hydrate: listTimeEntries,
 			KeyColumns: []*plugin.KeyColumn{
 				{Name: "project_id", Require: plugin.Optional, Operators: []string{"="}},
+				{Name: "issue_id", Require: plugin.Optional, Operators: []string{"="}},
 				{Name: "user_id", Require: plugin.Optional, Operators: []string{"="}},
 				{Name: "activity_id", Require: plugin.Optional, Operators: []string{"="}},
 				{Name: "spent_on", Require: plugin.Optional, Operators: []string{">=", ">", "<", "<="}},
@@ -133,37 +137,66 @@ func listTimeEntries(ctx context.Context, d *plugin.QueryData, h *plugin.Hydrate
 		return nil, err
 	}
 
-	filters := rm.TimeEntryGetRequestFiltersInit()
+	// Build query parameters
+	params := url.Values{}
 
 	if d.EqualsQuals["project_id"] != nil {
-		filters.ProjectSet(fmt.Sprintf("%d", d.EqualsQuals["project_id"].GetInt64Value()))
+		params.Set("project_id", strconv.FormatInt(d.EqualsQuals["project_id"].GetInt64Value(), 10))
+	}
+	if d.EqualsQuals["issue_id"] != nil {
+		params.Set("issue_id", strconv.FormatInt(d.EqualsQuals["issue_id"].GetInt64Value(), 10))
 	}
 	if d.EqualsQuals["user_id"] != nil {
-		filters.UserIDSet(d.EqualsQuals["user_id"].GetInt64Value())
+		params.Set("user_id", strconv.FormatInt(d.EqualsQuals["user_id"].GetInt64Value(), 10))
 	}
 	if d.EqualsQuals["activity_id"] != nil {
-		filters.ActivityIDSet(d.EqualsQuals["activity_id"].GetInt64Value())
+		params.Set("activity_id", strconv.FormatInt(d.EqualsQuals["activity_id"].GetInt64Value(), 10))
 	}
 
 	from, to := extractSpentOnRange(d.Quals)
-	if from != "" || to != "" {
-		filters.SpentOnSet(from, to)
+	if from != "" {
+		params.Set("from", from)
+	}
+	if to != "" {
+		params.Set("to", to)
 	}
 
-	// TimeEntryAllGet handles pagination internally
-	result, _, err := client.TimeEntryAllGet(rm.TimeEntryAllGetRequest{
-		Filters: filters,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list time entries: %w", err)
+	var offset int64
+	var pageSize int64 = 100
+	if d.QueryContext.Limit != nil && *d.QueryContext.Limit < pageSize {
+		pageSize = *d.QueryContext.Limit
 	}
 
-	for _, te := range result.TimeEntries {
-		d.StreamListItem(ctx, timeEntryRowFromObject(te))
+	params.Set("limit", strconv.FormatInt(pageSize, 10))
 
-		if d.RowsRemaining(ctx) == 0 {
-			return nil, nil
+	for {
+		params.Set("offset", strconv.FormatInt(offset, 10))
+
+		var result rm.TimeEntryResult
+		_, err := client.Get(
+			&result,
+			url.URL{
+				Path:     "/time_entries.json",
+				RawQuery: params.Encode(),
+			},
+			http.StatusOK,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list time entries: %w", err)
 		}
+
+		for _, te := range result.TimeEntries {
+			d.StreamListItem(ctx, timeEntryRowFromObject(te))
+
+			if d.RowsRemaining(ctx) == 0 {
+				return nil, nil
+			}
+		}
+
+		if offset+result.Limit >= result.TotalCount {
+			break
+		}
+		offset += pageSize
 	}
 
 	return nil, nil
