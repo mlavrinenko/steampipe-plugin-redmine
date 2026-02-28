@@ -18,6 +18,7 @@ import (
 
 // versionObject mirrors the Redmine Version JSON structure.
 // nxs-go-redmine does not provide a versions API, so we define types here.
+// TODO: remove if nxs-go-redmine adds native version support (upstream issue).
 type versionObject struct {
 	ID            int64                     `json:"id"`
 	Project       rm.IDName                 `json:"project"`

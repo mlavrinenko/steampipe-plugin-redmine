@@ -106,16 +106,11 @@ func extractSpentOnRange(quals plugin.KeyColumnQualMap) (from, to string) {
 
 	for _, q := range quals["spent_on"].Quals {
 		ts := q.Value.GetTimestampValue().AsTime()
-		date := ts.Format("2006-01-02")
-		switch q.Operator {
-		case ">=":
+		date, isFrom := adjustDateBound(q.Operator, ts)
+		if isFrom {
 			from = date
-		case ">":
-			from = ts.AddDate(0, 0, 1).Format("2006-01-02")
-		case "<=":
+		} else {
 			to = date
-		case "<":
-			to = ts.AddDate(0, 0, -1).Format("2006-01-02")
 		}
 	}
 

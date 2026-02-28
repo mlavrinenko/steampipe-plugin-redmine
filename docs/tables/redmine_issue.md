@@ -2,6 +2,8 @@
 
 Issues in the Redmine instance. By default, both open and closed issues are returned.
 
+**Note:** The `assigned_to_me` column is a filter-only column. It can be used in `WHERE` clauses to filter issues assigned to the API key owner, but it always returns `false` in query results. To see the actual assignee, use `assigned_to_id` and `assigned_to_name`.
+
 ## Examples
 
 ### Basic info

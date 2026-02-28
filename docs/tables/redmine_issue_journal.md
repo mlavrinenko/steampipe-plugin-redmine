@@ -1,8 +1,10 @@
 # Table: redmine_issue_journal
 
-Journal entries (comments and field changes) on Redmine issues. Because the Redmine API only returns journals on the single-issue endpoint, this table performs N+1 requests under the hood.
+Journal entries (comments and field changes) on Redmine issues. Because the Redmine API only returns journals on the single-issue endpoint, this table performs N+1 requests under the hood (one request per issue with matching `updated_on`).
 
 You can get a specific journal entry by `issue_id` and `journal_id`, or list journals with a required `created_on` date range qualifier.
+
+**Performance tip:** Keep the `created_on` range narrow to limit the number of API calls. A wide date range (e.g., an entire year) on an active instance will fetch journals for every issue updated in that period. Filtering by `project_id` or `issue_id` further reduces the number of requests.
 
 ## Examples
 

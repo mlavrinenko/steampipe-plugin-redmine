@@ -9,6 +9,8 @@ import (
 
 // isRetryableError returns true if the error message indicates a retryable condition
 // (rate limiting or service unavailable).
+// NOTE: relies on nxs-go-redmine formatting errors as "returned: <status>".
+// If the library changes its error format, these predicates must be updated.
 func isRetryableError(err error) bool {
 	if err == nil {
 		return false

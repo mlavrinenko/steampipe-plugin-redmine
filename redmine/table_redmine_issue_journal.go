@@ -91,18 +91,12 @@ func extractDateRange(quals plugin.KeyColumnQualMap, column ...string) dateRange
 
 	for _, q := range quals[col].Quals {
 		ts := q.Value.GetTimestampValue().AsTime()
-		switch q.Operator {
-		case ">=":
-			t := ts
+		bound, isFrom := adjustTimestampBound(q.Operator, ts)
+		if isFrom {
+			t := bound
 			dr.from = &t
-		case ">":
-			t := ts.Add(time.Second)
-			dr.from = &t
-		case "<=":
-			t := ts.Add(time.Second)
-			dr.to = &t
-		case "<":
-			t := ts
+		} else {
+			t := bound
 			dr.to = &t
 		}
 	}

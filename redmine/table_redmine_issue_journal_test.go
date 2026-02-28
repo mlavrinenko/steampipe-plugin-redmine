@@ -6,9 +6,8 @@ import (
 )
 
 func TestExtractDateRange(t *testing.T) {
-	// extractDateRange is tested indirectly through journalInRange and buildDateFilter
-	// since it requires plugin.KeyColumnQualMap which is hard to construct in unit tests.
-	// The pure functions below are tested directly.
+	// extractDateRange requires plugin.KeyColumnQualMap which is hard to construct in unit tests.
+	// The operator logic is extracted into adjustTimestampBound and tested in helpers_test.go.
 }
 
 func TestJournalInRange(t *testing.T) {

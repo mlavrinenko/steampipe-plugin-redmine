@@ -257,6 +257,8 @@ func listIssues(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData)
 			}
 		}
 
+		// Short page means we've reached the end. If total is an exact multiple of
+		// pageSize this causes one extra empty request, which is acceptable.
 		if int64(len(result.Issues)) < pageSize {
 			break
 		}
