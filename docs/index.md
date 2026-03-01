@@ -1,5 +1,5 @@
 ---
-organization: "tank-io"
+organization: "mlavrinenko"
 category: ["software development"]
 brand_color: "#B32024"
 display_name: "Redmine"

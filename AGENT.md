@@ -7,7 +7,7 @@ activity (journal entries) from issues to help write time-entry reports.
 
 ## Architecture
 
-- **Go module**: `github.com/tank-io/steampipe-plugin-redmine`
+- **Go module**: `github.com/mlavrinenko/steampipe-plugin-redmine`
 - **Redmine client**: `github.com/nixys/nxs-go-redmine/v5` (chosen for type safety, header auth, `UserCurrentGet()`, named include constants)
 - **Plugin SDK**: `github.com/turbot/steampipe-plugin-sdk/v5` (requires Go 1.26+)
 - **Build system**: Justfile (not Makefile), Nix flake for dev environment

@@ -1,4 +1,4 @@
-module github.com/tank-io/steampipe-plugin-redmine
+module github.com/mlavrinenko/steampipe-plugin-redmine
 
 go 1.26.0
 
