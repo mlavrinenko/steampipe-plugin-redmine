@@ -1,6 +1,33 @@
 # Pre-Publication TODO
 
-Manual tasks required before publishing to the Steampipe Hub.
+Manual tasks required before publishing.
+
+## GHCR OCI Registry Setup
+
+One-time setup to enable `steampipe plugin install ghcr.io/mlavrinenko/steampipe-plugin-redmine@latest`.
+
+- [x] **Make the GHCR package public.** After the first release pushes the OCI image,
+  the package is created as **private** by default. Go to:
+  `https://github.com/users/mlavrinenko/packages/container/steampipe-plugin-redmine/settings`
+  and change visibility to **Public**.
+
+- [x] **Verify installation** after the first release:
+  ```bash
+  steampipe plugin install ghcr.io/mlavrinenko/steampipe-plugin-redmine@latest
+  ```
+  Then confirm the connection config was created at `~/.steampipe/config/redmine.spc`
+  and the plugin binary landed in `~/.steampipe/plugins/`.
+
+### How it works
+
+The release workflow (`.github/workflows/release.yml`) triggers on `v*` tags:
+
+1. GoReleaser builds binaries for linux/darwin x amd64/arm64.
+2. ORAS pushes a single OCI artifact to `ghcr.io/mlavrinenko/steampipe-plugin-redmine:{version}`
+   containing platform-specific binary layers, docs, and config with Steampipe's custom media types.
+3. Non-RC versions are also tagged `latest`.
+
+To create a release: `git tag v0.1.0 && git push origin v0.1.0`
 
 ## Hub Assets (request from Turbot)
 
