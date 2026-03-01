@@ -7,6 +7,13 @@ on:
 
 permissions:
   contents: write
+  packages: write
+
+env:
+  PLUGIN_NAME: redmine
+  ORG: mlavrinenko
+  CR: ghcr.io
+  ORAS_VERSION: "1.3.0"
 
 jobs:
   release:
@@ -16,6 +23,21 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set version from tag
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Validate version (semver or rc)
+        run: |
+          if [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]]; then
+            echo "Version OK: $VERSION"
+          else
+            echo "Invalid version: $VERSION"
+            exit 1
+          fi
+
+      # Build binaries with GoReleaser
       - uses: actions/setup-go@v5
         with:
           go-version: "1.26"
@@ -23,6 +45,77 @@ jobs:
       - uses: goreleaser/goreleaser-action@v6
         with:
           version: latest
-          args: release --clean
+          args: release --clean --timeout=30m
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Prepare OCI layers
+      - name: Create OCI config
+        run: |
+          jq -n \
+            --arg name "$PLUGIN_NAME" \
+            --arg organization "$ORG" \
+            --arg version "$VERSION" \
+            --arg schemaVersion "2020-11-18" \
+            '{schemaVersion: $schemaVersion, plugin: {name: $name, organization: $organization, version: $version}}' \
+            > config.json
+
+      - name: Create OCI annotations
+        run: |
+          jq -n \
+            --arg title "$PLUGIN_NAME" \
+            --arg desc "$ORG" \
+            --arg version "$VERSION" \
+            --arg timestamp "$(date -u +%FT%TZ)" \
+            --arg repo "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
+            --arg commit "$GITHUB_SHA" \
+            '{
+              "$manifest": {
+                "org.opencontainers.image.title": $title,
+                "org.opencontainers.image.description": $desc,
+                "org.opencontainers.image.version": $version,
+                "org.opencontainers.image.created": $timestamp,
+                "org.opencontainers.image.source": $repo,
+                "org.opencontainers.image.revision": $commit
+              }
+            }' \
+            > annotations.json
+
+      # Install ORAS
+      - name: Install ORAS
+        run: |
+          curl -sLO "https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_amd64.tar.gz"
+          sudo tar xzf "oras_${ORAS_VERSION}_linux_amd64.tar.gz" -C /usr/local/bin oras
+          oras version
+
+      # Login to GHCR
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Push OCI image to GHCR
+      - name: Push to GHCR
+        run: |
+          REF="$CR/$ORG/steampipe-plugin-${PLUGIN_NAME}:${VERSION}"
+          oras push "$REF" \
+            --config config.json:application/vnd.turbot.steampipe.config.v1+json \
+            --annotation-file annotations.json \
+            "dist/steampipe-plugin-${PLUGIN_NAME}_darwin_amd64.gz:application/vnd.turbot.steampipe.plugin.darwin-amd64.layer.v1+gzip" \
+            "dist/steampipe-plugin-${PLUGIN_NAME}_darwin_arm64.gz:application/vnd.turbot.steampipe.plugin.darwin-arm64.layer.v1+gzip" \
+            "dist/steampipe-plugin-${PLUGIN_NAME}_linux_amd64.gz:application/vnd.turbot.steampipe.plugin.linux-amd64.layer.v1+gzip" \
+            "dist/steampipe-plugin-${PLUGIN_NAME}_linux_arm64.gz:application/vnd.turbot.steampipe.plugin.linux-arm64.layer.v1+gzip" \
+            "docs:application/vnd.turbot.steampipe.plugin.docs.layer.v1+tar" \
+            "config:application/vnd.turbot.steampipe.plugin.spc.layer.v1+tar"
+
+      - name: Tag as latest (non-RC only)
+        run: |
+          REF="$CR/$ORG/steampipe-plugin-${PLUGIN_NAME}:${VERSION}"
+          if [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Tagging as latest"
+            oras tag "$REF" latest
+          else
+            echo "Skipping latest tag for RC version: $VERSION"
+          fi

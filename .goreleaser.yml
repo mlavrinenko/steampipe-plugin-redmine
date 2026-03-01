@@ -16,11 +16,10 @@ builds:
     binary: "{{ .ProjectName }}.plugin"
 
 archives:
-  - format: tar.gz
+  - format: gz
     name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
     files:
-      - docs/**
-      - config/*
+      - none*
 checksum:
   name_template: "{{ .ProjectName }}_{{ .Version }}_SHA256SUMS"
   algorithm: sha256
