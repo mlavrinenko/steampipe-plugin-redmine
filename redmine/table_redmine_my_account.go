@@ -35,6 +35,7 @@ func tableRedmineMyAccount() *plugin.Table {
 			{Name: "status", Type: proto.ColumnType_INT, Description: "User status (0=anonymous, 1=active, 2=registered, 3=locked)."},
 			{Name: "twofa_scheme", Type: proto.ColumnType_STRING, Description: "Two-factor authentication scheme."},
 			// Standard columns
+			{Name: "akas", Type: proto.ColumnType_JSON, Description: "Array of globally unique identifier strings for the resource."},
 			{Name: "title", Type: proto.ColumnType_STRING, Description: "The display name for this resource.", Transform: transform.FromField("Login")},
 		},
 	}

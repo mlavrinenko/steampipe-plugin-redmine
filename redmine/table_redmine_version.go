@@ -55,6 +55,7 @@ type versionRow struct {
 	CustomFields  []rm.CustomFieldGetObject
 	CreatedOn     *time.Time
 	UpdatedOn     *time.Time
+	Akas          []string
 }
 
 func tableRedmineVersion() *plugin.Table {
@@ -85,6 +86,7 @@ func tableRedmineVersion() *plugin.Table {
 			{Name: "updated_on", Type: proto.ColumnType_TIMESTAMP, Description: "When the version was last updated."},
 			{Name: "wiki_page_title", Type: proto.ColumnType_STRING, Description: "Associated wiki page title."},
 			// Standard columns
+			{Name: "akas", Type: proto.ColumnType_JSON, Description: "Array of globally unique identifier strings for the resource."},
 			{Name: "title", Type: proto.ColumnType_STRING, Description: "The display name for this resource.", Transform: transform.FromField("Name")},
 		},
 	}
@@ -106,6 +108,7 @@ func versionRowFromObject(v versionObject) versionRow {
 		CustomFields:  v.CustomFields,
 		CreatedOn:     parseRedmineTime(v.CreatedOn),
 		UpdatedOn:     parseRedmineTime(v.UpdatedOn),
+		Akas:          []string{fmt.Sprintf("/versions/%d", v.ID)},
 	}
 }
 

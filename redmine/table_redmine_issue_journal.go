@@ -30,6 +30,7 @@ type issueJournalRow struct {
 	UserName     string
 	PrivateNotes bool
 	Details      []rm.IssueJournalDetailObject
+	Akas         []string
 }
 
 func tableRedmineIssueJournal() *plugin.Table {
@@ -63,6 +64,7 @@ func tableRedmineIssueJournal() *plugin.Table {
 			{Name: "user_id", Type: proto.ColumnType_INT, Description: "ID of the user who created the journal entry."},
 			{Name: "user_name", Type: proto.ColumnType_STRING, Description: "Name of the user who created the journal entry."},
 			// Standard columns
+			{Name: "akas", Type: proto.ColumnType_JSON, Description: "Array of globally unique identifier strings for the resource."},
 			{Name: "title", Type: proto.ColumnType_STRING, Description: "The display name for this resource.", Transform: transform.FromField("IssueSubject")},
 		},
 	}
@@ -104,6 +106,7 @@ func getIssueJournal(ctx context.Context, d *plugin.QueryData, h *plugin.Hydrate
 				UserName:     journal.User.Name,
 				PrivateNotes: journal.PrivateNotes,
 				Details:      journal.Details,
+				Akas:         []string{fmt.Sprintf("/issues/%d/journals/%d", issue.ID, journal.ID)},
 			}, nil
 		}
 	}
@@ -247,6 +250,7 @@ func fetchAndStreamIssueJournals(
 			UserName:     journal.User.Name,
 			PrivateNotes: journal.PrivateNotes,
 			Details:      journal.Details,
+			Akas:         []string{fmt.Sprintf("/issues/%d/journals/%d", issue.ID, journal.ID)},
 		}
 
 		d.StreamListItem(ctx, row)

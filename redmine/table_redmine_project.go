@@ -36,6 +36,7 @@ type projectRow struct {
 	EnabledModules      *[]rm.IDName
 	CreatedOn           *time.Time
 	UpdatedOn           *time.Time
+	Akas                []string
 }
 
 func tableRedmineProject() *plugin.Table {
@@ -77,6 +78,7 @@ func tableRedmineProject() *plugin.Table {
 			{Name: "trackers", Type: proto.ColumnType_JSON, Description: "Trackers."},
 			{Name: "updated_on", Type: proto.ColumnType_TIMESTAMP, Description: "When the project was last updated."},
 			// Standard columns
+			{Name: "akas", Type: proto.ColumnType_JSON, Description: "Array of globally unique identifier strings for the resource."},
 			{Name: "title", Type: proto.ColumnType_STRING, Description: "The display name for this resource.", Transform: transform.FromField("Name")},
 		},
 	}
@@ -103,6 +105,7 @@ func projectRowFromObject(p rm.ProjectObject) projectRow {
 		EnabledModules:      p.EnabledModules,
 		CreatedOn:           parseRedmineTime(p.CreatedOn),
 		UpdatedOn:           parseRedmineTime(p.UpdatedOn),
+		Akas:                []string{fmt.Sprintf("/projects/%s", p.Identifier)},
 	}
 
 	if p.DefaultVersion != nil {

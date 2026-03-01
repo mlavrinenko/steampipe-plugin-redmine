@@ -19,6 +19,7 @@ type trackerRow struct {
 	DefaultStatusName     string
 	Description           *string
 	EnabledStandardFields []string
+	Akas                  []string
 }
 
 func tableRedmineTracker() *plugin.Table {
@@ -40,6 +41,7 @@ func tableRedmineTracker() *plugin.Table {
 			{Name: "enabled_standard_fields", Type: proto.ColumnType_JSON, Description: "Standard fields enabled for this tracker."},
 			{Name: "name", Type: proto.ColumnType_STRING, Description: "The tracker name."},
 			// Standard columns
+			{Name: "akas", Type: proto.ColumnType_JSON, Description: "Array of globally unique identifier strings for the resource."},
 			{Name: "title", Type: proto.ColumnType_STRING, Description: "The display name for this resource.", Transform: transform.FromField("Name")},
 		},
 	}
@@ -55,6 +57,7 @@ func trackerRowFromObject(t rm.TrackerObject) trackerRow {
 		DefaultStatusName:     t.DefaultStatus.Name,
 		Description:           t.Description,
 		EnabledStandardFields: t.EnabledStandardFields,
+		Akas:                  []string{fmt.Sprintf("/trackers/%d", t.ID)},
 	}
 }
 

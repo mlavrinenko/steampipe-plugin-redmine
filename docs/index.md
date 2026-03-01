@@ -33,7 +33,7 @@ Use SQL to query projects, issues, users, time entries, and journals from a Redm
 Install the plugin locally:
 
 ```bash
-just install
+make install
 ```
 
 Copy and edit the configuration file:

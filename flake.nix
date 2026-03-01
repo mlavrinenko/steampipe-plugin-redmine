@@ -73,7 +73,7 @@
               pkgs.go-tools
               pkgs.golangci-lint
               pkgs.delve
-              pkgs.just
+              pkgs.gnumake
               pkgs.steampipe
               pkgs.patchelf
             ];
@@ -81,7 +81,7 @@
             shellHook = ''
               echo "steampipe-plugin-redmine dev shell"
               echo "Go $(go version | cut -d' ' -f3)"
-              echo "Run 'just' to see available commands"
+              echo "Run 'make' to see available targets"
 
               # NixOS: patch steampipe's bundled postgres binaries if needed
               _sp_db_dir="''${STEAMPIPE_INSTALL_DIR:-$HOME/.steampipe}/db"

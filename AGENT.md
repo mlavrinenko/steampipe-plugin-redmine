@@ -10,7 +10,7 @@ activity (journal entries) from issues to help write time-entry reports.
 - **Go module**: `github.com/mlavrinenko/steampipe-plugin-redmine`
 - **Redmine client**: `github.com/nixys/nxs-go-redmine/v5` (chosen for type safety, header auth, `UserCurrentGet()`, named include constants)
 - **Plugin SDK**: `github.com/turbot/steampipe-plugin-sdk/v5` (requires Go 1.26+)
-- **Build system**: Justfile (not Makefile), Nix flake for dev environment
+- **Build system**: Makefile, Nix flake for dev environment
 
 ## Project Structure
 
@@ -42,7 +42,7 @@ steampipe-plugin-redmine/
     redmine.spc                        # Example connection config
   flake.nix                            # Dev shell + plugin package
   flake.lock
-  Justfile                             # Build/install/test/lint commands
+  Makefile                             # Build/install/test/lint commands
   go.mod / go.sum
 ```
 
@@ -56,7 +56,7 @@ steampipe-plugin-redmine/
 | go-redmine | `.res/go-redmine/` | Alternative client (not used) |
 | Steampipe docs | `.res/steampipe-docs/docs/develop/` | Plugin development guides |
 
-Tip: You can setup all references using `just setup-refs`.
+Tip: You can setup all references using `make setup-refs`.
 
 ## Development Patterns
 
@@ -88,5 +88,5 @@ Tip: You can setup all references using `just setup-refs`.
 
 - Unit test pure logic (filtering, matching, config parsing, error predicates)
 - Extract filtering logic into testable functions separate from hydrate functions
-- Integration: `just install` then run SQL queries against real Redmine
-- Run: `just test` (wraps `go test ./...`)
+- Integration: `make install` then run SQL queries against real Redmine
+- Run: `make test` (wraps `go test ./...`)

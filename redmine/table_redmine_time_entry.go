@@ -30,6 +30,7 @@ type timeEntryRow struct {
 	CreatedOn    *time.Time
 	UpdatedOn    *time.Time
 	Title        string
+	Akas         []string
 }
 
 func tableRedmineTimeEntry() *plugin.Table {
@@ -67,6 +68,7 @@ func tableRedmineTimeEntry() *plugin.Table {
 			{Name: "updated_on", Type: proto.ColumnType_TIMESTAMP, Description: "When the time entry was last updated."},
 			{Name: "user_name", Type: proto.ColumnType_STRING, Description: "The user name."},
 			// Standard columns
+			{Name: "akas", Type: proto.ColumnType_JSON, Description: "Array of globally unique identifier strings for the resource."},
 			{Name: "title", Type: proto.ColumnType_STRING, Description: "The display name for this resource."},
 		},
 	}
@@ -95,6 +97,7 @@ func timeEntryRowFromObject(te rm.TimeEntryObject) timeEntryRow {
 		CreatedOn:    parseRedmineTime(te.CreatedOn),
 		UpdatedOn:    parseRedmineTime(te.UpdatedOn),
 		Title:        title,
+		Akas:         []string{fmt.Sprintf("/time_entries/%d", te.ID)},
 	}
 }
 

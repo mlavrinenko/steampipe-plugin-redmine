@@ -17,6 +17,7 @@ type timeEntryActivityRow struct {
 	Name      string
 	IsDefault bool
 	Active    bool
+	Akas      []string
 }
 
 func tableRedmineTimeEntryActivity() *plugin.Table {
@@ -36,6 +37,7 @@ func tableRedmineTimeEntryActivity() *plugin.Table {
 			{Name: "is_default", Type: proto.ColumnType_BOOL, Description: "Whether this is the default activity."},
 			{Name: "name", Type: proto.ColumnType_STRING, Description: "The activity name."},
 			// Standard columns
+			{Name: "akas", Type: proto.ColumnType_JSON, Description: "Array of globally unique identifier strings for the resource."},
 			{Name: "title", Type: proto.ColumnType_STRING, Description: "The display name for this resource.", Transform: transform.FromField("Name")},
 		},
 	}
@@ -49,6 +51,7 @@ func timeEntryActivityRowFromObject(a rm.EnumerationTimeEntryActivityObject) tim
 		Name:      a.Name,
 		IsDefault: a.IsDefault,
 		Active:    a.Active,
+		Akas:      []string{fmt.Sprintf("/enumerations/time_entry_activities/%d", a.ID)},
 	}
 }
 

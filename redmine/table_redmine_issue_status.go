@@ -16,6 +16,7 @@ type issueStatusRow struct {
 	ID       int64
 	Name     string
 	IsClosed bool
+	Akas     []string
 }
 
 func tableRedmineIssueStatus() *plugin.Table {
@@ -34,6 +35,7 @@ func tableRedmineIssueStatus() *plugin.Table {
 			{Name: "is_closed", Type: proto.ColumnType_BOOL, Description: "Whether this status represents a closed state."},
 			{Name: "name", Type: proto.ColumnType_STRING, Description: "The status name."},
 			// Standard columns
+			{Name: "akas", Type: proto.ColumnType_JSON, Description: "Array of globally unique identifier strings for the resource."},
 			{Name: "title", Type: proto.ColumnType_STRING, Description: "The display name for this resource.", Transform: transform.FromField("Name")},
 		},
 	}
@@ -46,6 +48,7 @@ func issueStatusRowFromObject(s rm.IssueStatusObject) issueStatusRow {
 		ID:       s.ID,
 		Name:     s.Name,
 		IsClosed: s.IsClosed,
+		Akas:     []string{fmt.Sprintf("/issue_statuses/%d", s.ID)},
 	}
 }
 

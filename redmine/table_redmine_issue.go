@@ -47,6 +47,7 @@ type issueRow struct {
 	CreatedOn           *time.Time
 	UpdatedOn           *time.Time
 	ClosedOn            *time.Time
+	Akas                []string
 }
 
 func tableRedmineIssue() *plugin.Table {
@@ -108,6 +109,7 @@ func tableRedmineIssue() *plugin.Table {
 			{Name: "tracker_name", Type: proto.ColumnType_STRING, Description: "The tracker name."},
 			{Name: "updated_on", Type: proto.ColumnType_TIMESTAMP, Description: "When the issue was last updated."},
 			// Standard columns
+			{Name: "akas", Type: proto.ColumnType_JSON, Description: "Array of globally unique identifier strings for the resource."},
 			{Name: "title", Type: proto.ColumnType_STRING, Description: "The display name for this resource.", Transform: transform.FromField("Subject")},
 		},
 	}
@@ -143,6 +145,7 @@ func issueRowFromObject(issue rm.IssueObject) issueRow {
 		CreatedOn:           parseRedmineTime(issue.CreatedOn),
 		UpdatedOn:           parseRedmineTime(issue.UpdatedOn),
 		ClosedOn:            parseRedmineTime(issue.ClosedOn),
+		Akas:                []string{fmt.Sprintf("/issues/%d", issue.ID)},
 	}
 
 	if issue.AssignedTo != nil {

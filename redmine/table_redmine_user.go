@@ -28,6 +28,7 @@ type userRow struct {
 	CustomFields    []rm.CustomFieldGetObject
 	Groups          *[]rm.IDName
 	Memberships     *[]rm.UserMembershipObject
+	Akas            []string
 }
 
 func tableRedmineUser() *plugin.Table {
@@ -62,6 +63,7 @@ func tableRedmineUser() *plugin.Table {
 			{Name: "passwd_changed_on", Type: proto.ColumnType_TIMESTAMP, Description: "When the password was last changed."},
 			{Name: "twofa_scheme", Type: proto.ColumnType_STRING, Description: "Two-factor authentication scheme."},
 			// Standard columns
+			{Name: "akas", Type: proto.ColumnType_JSON, Description: "Array of globally unique identifier strings for the resource."},
 			{Name: "title", Type: proto.ColumnType_STRING, Description: "The display name for this resource.", Transform: transform.FromField("Login")},
 		},
 	}
@@ -84,6 +86,7 @@ func userRowFromObject(u rm.UserObject) userRow {
 		CustomFields:    u.CustomFields,
 		Groups:          u.Groups,
 		Memberships:     u.Memberships,
+		Akas:            []string{fmt.Sprintf("/users/%d", u.ID)},
 	}
 
 	if u.Status != nil {

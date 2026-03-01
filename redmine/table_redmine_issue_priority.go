@@ -17,6 +17,7 @@ type issuePriorityRow struct {
 	Name      string
 	IsDefault bool
 	Active    bool
+	Akas      []string
 }
 
 func tableRedmineIssuePriority() *plugin.Table {
@@ -36,6 +37,7 @@ func tableRedmineIssuePriority() *plugin.Table {
 			{Name: "is_default", Type: proto.ColumnType_BOOL, Description: "Whether this is the default priority."},
 			{Name: "name", Type: proto.ColumnType_STRING, Description: "The priority name."},
 			// Standard columns
+			{Name: "akas", Type: proto.ColumnType_JSON, Description: "Array of globally unique identifier strings for the resource."},
 			{Name: "title", Type: proto.ColumnType_STRING, Description: "The display name for this resource.", Transform: transform.FromField("Name")},
 		},
 	}
@@ -49,6 +51,7 @@ func issuePriorityRowFromObject(p rm.EnumerationPriorityObject) issuePriorityRow
 		Name:      p.Name,
 		IsDefault: p.IsDefault,
 		Active:    p.Active,
+		Akas:      []string{fmt.Sprintf("/enumerations/issue_priorities/%d", p.ID)},
 	}
 }
 

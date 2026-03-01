@@ -43,7 +43,15 @@ order by
 
 ```sql
 select
-  *
+  id,
+  subject,
+  project_name,
+  status_name,
+  priority_name,
+  assigned_to_name,
+  description,
+  created_on,
+  updated_on
 from
   redmine_issue
 where

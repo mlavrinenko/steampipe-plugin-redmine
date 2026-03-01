@@ -98,7 +98,7 @@ connection "redmine" {
 
 ```bash
 nix develop
-just install
+make install
 cp config/redmine.spc ~/.steampipe/config/redmine.spc
 vi ~/.steampipe/config/redmine.spc  # configure endpoint and api_key
 ```
@@ -108,8 +108,8 @@ vi ~/.steampipe/config/redmine.spc  # configure endpoint and api_key
 ```bash
 nix build       # builds the plugin as a Nix package
 nix develop     # drops you into a dev shell with all tools
-just test       # run unit tests
-just lint       # run golangci-lint
-just build      # build the plugin binary
-just install    # build and install to ~/.steampipe/plugins/
+make test       # run unit tests
+make lint       # run golangci-lint
+make build      # build the plugin binary
+make install    # build and install to ~/.steampipe/plugins/
 ```
