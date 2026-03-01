@@ -24,7 +24,7 @@ setup-refs:
     )
 
     for repo_spec in "${repos[@]}"; do
-        url="${repo_spec%%:*}"
+        url="${repo_spec%:*}"
         dest="${repo_spec##*:}"
         repo_name="$(basename "$dest")"
 
