@@ -68,7 +68,7 @@ Connection configuration is defined in a `.spc` file:
 
 ```hcl
 connection "redmine" {
-  plugin = "local/redmine"
+  plugin = "ghcr.io/mlavrinenko/redmine"
 
   # Redmine instance URL (required).
   # Can also be set with the REDMINE_ENDPOINT environment variable.
@@ -109,13 +109,13 @@ You may create multiple connections to different Redmine instances:
 
 ```hcl
 connection "redmine_production" {
-  plugin   = "local/redmine"
+  plugin   = "ghcr.io/mlavrinenko/redmine"
   endpoint = "https://redmine.example.com"
   api_key  = "abc123..."
 }
 
 connection "redmine_staging" {
-  plugin   = "local/redmine"
+  plugin   = "ghcr.io/mlavrinenko/redmine"
   endpoint = "https://staging-redmine.example.com"
   api_key  = "def456..."
 }
@@ -125,7 +125,7 @@ You can also create an [aggregator connection](https://steampipe.io/docs/managin
 
 ```hcl
 connection "redmine_all" {
-  plugin      = "local/redmine"
+  plugin      = "ghcr.io/mlavrinenko/redmine"
   type        = "aggregator"
   connections = ["redmine_production", "redmine_staging"]
 }

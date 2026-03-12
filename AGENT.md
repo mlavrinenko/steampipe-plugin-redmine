@@ -81,7 +81,7 @@ Tip: You can setup all references using `make setup-refs`.
 - Go 1.26+ required (available as `go_1_26` in nixpkgs unstable)
 - Use `nix-shell -p $package --run "$command"` for ad-hoc tooling
 - Plugin binary: `steampipe-plugin-redmine.plugin` (`.plugin` extension required)
-- Local install path: `~/.steampipe/plugins/local/redmine/`
+- Local install path: `~/.steampipe/plugins/ghcr.io/mlavrinenko/redmine/`
 - Nix plugin output: flat `$out/` with `.plugin` binary + `docs/` + `config/`
 
 ## Testing

@@ -1,6 +1,6 @@
 PLUGIN_NAME = steampipe-plugin-redmine
 INSTALL_DIR ?= $(HOME)/.steampipe
-PLUGIN_DIR = $(INSTALL_DIR)/plugins/local/redmine
+PLUGIN_DIR = $(INSTALL_DIR)/plugins/ghcr.io/mlavrinenko/redmine
 
 .PHONY: build test test-cover fmt vet lint tidy install clean uninstall setup-refs
 
