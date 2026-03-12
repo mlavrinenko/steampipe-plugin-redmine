@@ -3,7 +3,7 @@
 A [Steampipe](https://steampipe.io) plugin to query a [Redmine](https://www.redmine.org) instance via SQL.
 
 ```bash
-steampipe plugin install ghcr.io/mlavrinenko/steampipe-plugin-redmine@v0.1.1
+steampipe plugin install ghcr.io/mlavrinenko/steampipe-plugin-redmine@latest
 ```
 
 ## Tables

@@ -37,6 +37,7 @@ func Plugin(ctx context.Context) *plugin.Plugin {
 			"redmine_issue_status":        tableRedmineIssueStatus(),
 			"redmine_my_account":          tableRedmineMyAccount(),
 			"redmine_project":             tableRedmineProject(),
+			"redmine_search":              tableRedmineSearch(),
 			"redmine_time_entry":          tableRedmineTimeEntry(),
 			"redmine_time_entry_activity": tableRedmineTimeEntryActivity(),
 			"redmine_tracker":             tableRedmineTracker(),
