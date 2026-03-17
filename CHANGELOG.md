@@ -1,5 +1,45 @@
 # Changelog
 
+## 0.3.1 (2026-03-17)
+
+### Bug Fixes
+
+- **redmine_issue**: Add `status_is_closed` filter to query closed issues without knowing specific status IDs.
+- **redmine_issue**: Default status filter changed from `*` (all) to `open`, matching Redmine's own default behavior.
+- **Makefile**: Install plugin to versioned GHCR paths (`ghcr.io/mlavrinenko/redmine@*/`) so local builds work regardless of Steampipe's path convention.
+
+## 0.3.0 (2026-03-16)
+
+### Tables
+
+- `redmine_project_membership` - Project memberships with user/group roles. Supports List by `project_id`.
+
+## 0.2.0 (2026-03-12)
+
+### Tables
+
+- `redmine_search` - Full-text search across Redmine resources via REST API.
+
+### Bug Fixes
+
+- Use full GHCR plugin path for install target and config.
+
+## 0.1.2 (2026-03-12)
+
+### Bug Fixes
+
+- Use GHCR plugin path instead of `local/redmine` in config and docs.
+
+### Documentation
+
+- Add installation command to README.
+
+## 0.1.1 (2026-03-02)
+
+### Bug Fixes
+
+- Switch to `golangci-lint-action@v7` in CI.
+
 ## 0.1.0 (2026-02-28)
 
 _Initial release with 11 tables._
