@@ -6,7 +6,7 @@
 
 - **redmine_issue**: Add `status_is_closed` filter to query closed issues without knowing specific status IDs.
 - **redmine_issue**: Default status filter changed from `*` (all) to `open`, matching Redmine's own default behavior.
-- **Makefile**: Install plugin to versioned GHCR paths (`ghcr.io/mlavrinenko/redmine@*/`) so local builds work regardless of Steampipe's path convention.
+- **Makefile**: Fix install target to use correct GHCR path (`ghcr.io/mlavrinenko/steampipe-plugin-redmine@latest/`).
 
 ## 0.3.0 (2026-03-16)
 

@@ -1,6 +1,6 @@
 PLUGIN_NAME = steampipe-plugin-redmine
 INSTALL_DIR ?= $(HOME)/.steampipe
-PLUGIN_DIR = $(INSTALL_DIR)/plugins/ghcr.io/mlavrinenko/redmine
+PLUGIN_DIR = $(INSTALL_DIR)/plugins/ghcr.io/mlavrinenko/steampipe-plugin-redmine@latest
 
 .PHONY: build test test-cover fmt vet lint tidy install clean uninstall setup-refs
 
@@ -29,13 +29,6 @@ tidy:
 install: build
 	mkdir -p $(PLUGIN_DIR)
 	cp $(PLUGIN_NAME).plugin $(PLUGIN_DIR)/
-	@# Also install to versioned path if it exists (Steampipe may use either)
-	@if [ -d "$(INSTALL_DIR)/plugins/ghcr.io/mlavrinenko/$(PLUGIN_NAME)@"* ]; then \
-		for d in $(INSTALL_DIR)/plugins/ghcr.io/mlavrinenko/$(PLUGIN_NAME)@*/; do \
-			cp $(PLUGIN_NAME).plugin "$$d"; \
-			echo "Also installed to $$d"; \
-		done; \
-	fi
 	cp -rn config/* $(INSTALL_DIR)/config/ 2>/dev/null || true
 	@echo "Plugin installed to $(PLUGIN_DIR)"
 	@echo "Ensure $(INSTALL_DIR)/config/redmine.spc exists with your credentials"

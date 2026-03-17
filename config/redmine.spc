@@ -1,5 +1,5 @@
 connection "redmine" {
-  plugin = "ghcr.io/mlavrinenko/redmine"
+  plugin = "ghcr.io/mlavrinenko/steampipe-plugin-redmine@latest"
 
   # Redmine instance URL (required).
   # Can also be set with the REDMINE_ENDPOINT environment variable.
