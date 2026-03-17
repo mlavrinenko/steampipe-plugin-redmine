@@ -64,6 +64,7 @@ func tableRedmineIssue() *plugin.Table {
 				{Name: "project_id", Require: plugin.Optional, Operators: []string{"="}},
 				{Name: "tracker_id", Require: plugin.Optional, Operators: []string{"="}},
 				{Name: "status_id", Require: plugin.Optional, Operators: []string{"="}},
+				{Name: "status_is_closed", Require: plugin.Optional, Operators: []string{"="}},
 				{Name: "priority_id", Require: plugin.Optional, Operators: []string{"="}},
 				{Name: "assigned_to_id", Require: plugin.Optional, Operators: []string{"="}},
 				{Name: "assigned_to_me", Require: plugin.Optional, Operators: []string{"="}},
@@ -201,9 +202,12 @@ func listIssues(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData)
 	}
 	if d.EqualsQuals["status_id"] != nil {
 		filters.FieldAdd("status_id", fmt.Sprintf("%d", d.EqualsQuals["status_id"].GetInt64Value()))
+	} else if d.EqualsQuals["status_is_closed"] != nil && d.EqualsQuals["status_is_closed"].GetBoolValue() {
+		// status_is_closed = true → fetch only closed issues
+		filters.FieldAdd("status_id", "closed")
 	} else {
-		// Include all statuses (Redmine defaults to open-only)
-		filters.FieldAdd("status_id", "*")
+		// Default: only open issues
+		filters.FieldAdd("status_id", "open")
 	}
 	if d.EqualsQuals["priority_id"] != nil {
 		filters.FieldAdd("priority_id", fmt.Sprintf("%d", d.EqualsQuals["priority_id"].GetInt64Value()))
