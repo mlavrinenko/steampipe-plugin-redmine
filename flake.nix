@@ -89,7 +89,7 @@
                 _interp="$(cat ${pkgs.stdenv.cc}/nix-support/dynamic-linker)"
                 for bin in "$_sp_db_dir"/*/postgres/bin/*; do
                   if file "$bin" 2>/dev/null | grep -q "ELF.*dynamically linked" && \
-                     readelf -l "$bin" 2>/dev/null | grep -q "interpreter: /lib64"; then
+                     ! ldd "$bin" >/dev/null 2>&1; then
                     patchelf --set-interpreter "$_interp" "$bin" 2>/dev/null || true
                   fi
                 done
