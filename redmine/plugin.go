@@ -31,6 +31,10 @@ func Plugin(ctx context.Context) *plugin.Plugin {
 			ShouldIgnoreError: isNotFoundError([]string{"returned: 404", "returned: 422"}),
 		},
 		TableMap: map[string]*plugin.Table{
+			"redmine_attachment":           tableRedmineAttachment(),
+			"redmine_custom_field":         tableRedmineCustomField(),
+			"redmine_document_category":    tableRedmineDocumentCategory(),
+			"redmine_group":               tableRedmineGroup(),
 			"redmine_issue":                tableRedmineIssue(),
 			"redmine_issue_journal":        tableRedmineIssueJournal(),
 			"redmine_issue_priority":       tableRedmineIssuePriority(),
@@ -44,6 +48,7 @@ func Plugin(ctx context.Context) *plugin.Plugin {
 			"redmine_tracker":              tableRedmineTracker(),
 			"redmine_user":                 tableRedmineUser(),
 			"redmine_version":              tableRedmineVersion(),
+			"redmine_wiki_page":            tableRedmineWikiPage(),
 		},
 	}
 	return p
