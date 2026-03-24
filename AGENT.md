@@ -18,7 +18,7 @@ activity (journal entries) from issues to help write time-entry reports.
 steampipe-plugin-redmine/
   main.go                              # Entry point: plugin.Serve()
   redmine/
-    plugin.go                          # Plugin definition, table map (11 tables)
+    plugin.go                          # Plugin definition, table map (13 tables)
     connection_config.go               # Config struct (endpoint, api_key)
     client.go                          # Redmine client factory with caching
     errors.go                          # Retry/ignore error predicates
@@ -29,6 +29,8 @@ steampipe-plugin-redmine/
     table_redmine_issue_status.go      # Issue status reference table
     table_redmine_my_account.go        # Current authenticated user (singleton)
     table_redmine_project.go           # Projects table
+    table_redmine_project_membership.go # Project memberships table
+    table_redmine_search.go            # Full-text search table
     table_redmine_time_entry.go        # Time entries table
     table_redmine_time_entry_activity.go # Time entry activity reference table
     table_redmine_tracker.go           # Tracker reference table
@@ -81,7 +83,7 @@ Tip: You can setup all references using `make setup-refs`.
 - Go 1.26+ required (available as `go_1_26` in nixpkgs unstable)
 - Use `nix-shell -p $package --run "$command"` for ad-hoc tooling
 - Plugin binary: `steampipe-plugin-redmine.plugin` (`.plugin` extension required)
-- Local install path: `~/.steampipe/plugins/ghcr.io/mlavrinenko/redmine/`
+- Local install path: `~/.steampipe/plugins/ghcr.io/mlavrinenko/steampipe-plugin-redmine@latest/`
 - Nix plugin output: flat `$out/` with `.plugin` binary + `docs/` + `config/`
 
 ## Testing
