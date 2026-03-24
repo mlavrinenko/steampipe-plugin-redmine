@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.4.0 (2026-03-24)
+
+### Tables
+
+- `redmine_attachment` - Attachment metadata by ID. Get-only (Redmine has no list-all-attachments endpoint).
+- `redmine_custom_field` - Custom field definitions (schema discovery). Supports Get by `id`.
+- `redmine_document_category` - Document category enumeration (reference table). Supports Get by `id`.
+- `redmine_group` - User groups. Supports Get by `id`.
+- `redmine_wiki_page` - Wiki pages per project. Supports List by `project_id` and Get by `project_id` + `title` (single-get returns full page text).
+
+### Bug Fixes
+
+- **devShell**: Fix shellhook to make postgres binary patching survive `nix-collect-garbage`.
+
 ## 0.3.1 (2026-03-17)
 
 ### Bug Fixes
