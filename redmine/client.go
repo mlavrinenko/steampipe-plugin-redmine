@@ -35,3 +35,23 @@ func connect(ctx context.Context, d *plugin.QueryData) (*rm.Context, error) {
 
 	return client, nil
 }
+
+func currentUserID(ctx context.Context, d *plugin.QueryData) (int64, error) {
+	cacheKey := "redmine_current_user_id"
+	if cached, ok := d.ConnectionManager.Cache.Get(cacheKey); ok {
+		return cached.(int64), nil
+	}
+
+	client, err := connect(ctx, d)
+	if err != nil {
+		return 0, err
+	}
+
+	user, _, err := client.UserCurrentGet(rm.UserCurrentGetRequest{})
+	if err != nil {
+		return 0, fmt.Errorf("failed to resolve current user: %w", err)
+	}
+
+	d.ConnectionManager.Cache.Set(cacheKey, user.ID)
+	return user.ID, nil
+}

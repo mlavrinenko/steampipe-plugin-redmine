@@ -28,6 +28,7 @@ type issueRow struct {
 	AuthorName          string
 	AssignedToID        int64
 	AssignedToName      string
+	AssignedToMe        bool
 	CategoryID          int64
 	CategoryName        string
 	FixedVersionID      int64
@@ -79,7 +80,7 @@ func tableRedmineIssue() *plugin.Table {
 			{Name: "tracker_id", Type: proto.ColumnType_INT, Description: "The tracker ID."},
 			{Name: "status_id", Type: proto.ColumnType_INT, Description: "The issue status ID."},
 			{Name: "assigned_to_id", Type: proto.ColumnType_INT, Description: "The assigned user ID."},
-			{Name: "assigned_to_me", Type: proto.ColumnType_BOOL, Description: "Filter-only: set to true in WHERE to return issues assigned to the API key owner. Always returns false in results; use assigned_to_id/assigned_to_name for the actual assignee.", Transform: transform.FromConstant(false)},
+			{Name: "assigned_to_me", Type: proto.ColumnType_BOOL, Description: "True when the issue is assigned to the API key owner. Can also be used in WHERE to push an assigned_to_id=me filter to the Redmine API."},
 			// Remaining columns alphabetically
 			{Name: "assigned_to_name", Type: proto.ColumnType_STRING, Description: "The assigned user name."},
 			{Name: "author_id", Type: proto.ColumnType_INT, Description: "The author user ID."},
@@ -118,7 +119,7 @@ func tableRedmineIssue() *plugin.Table {
 
 //// HELPER FUNCTIONS
 
-func issueRowFromObject(issue rm.IssueObject) issueRow {
+func issueRowFromObject(issue rm.IssueObject, meID int64) issueRow {
 	row := issueRow{
 		ID:                  issue.ID,
 		ProjectID:           issue.Project.ID,
@@ -152,6 +153,7 @@ func issueRowFromObject(issue rm.IssueObject) issueRow {
 	if issue.AssignedTo != nil {
 		row.AssignedToID = issue.AssignedTo.ID
 		row.AssignedToName = issue.AssignedTo.Name
+		row.AssignedToMe = meID != 0 && issue.AssignedTo.ID == meID
 	}
 	if issue.Category != nil {
 		row.CategoryID = issue.Category.ID
@@ -183,11 +185,21 @@ func getIssue(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (
 		return nil, fmt.Errorf("failed to get issue %d: %w", issueID, err)
 	}
 
-	return issueRowFromObject(issue), nil
+	meID, err := currentUserID(ctx, d)
+	if err != nil {
+		return nil, err
+	}
+
+	return issueRowFromObject(issue, meID), nil
 }
 
 func listIssues(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
 	client, err := connect(ctx, d)
+	if err != nil {
+		return nil, err
+	}
+
+	meID, err := currentUserID(ctx, d)
 	if err != nil {
 		return nil, err
 	}
@@ -257,7 +269,7 @@ func listIssues(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData)
 		}
 
 		for _, issue := range result.Issues {
-			d.StreamListItem(ctx, issueRowFromObject(issue))
+			d.StreamListItem(ctx, issueRowFromObject(issue, meID))
 
 			if d.RowsRemaining(ctx) == 0 {
 				return nil, nil

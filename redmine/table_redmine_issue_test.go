@@ -38,7 +38,7 @@ func TestIssueRowFromObject(t *testing.T) {
 			ClosedOn:            "",
 		}
 
-		row := issueRowFromObject(obj)
+		row := issueRowFromObject(obj, 0)
 
 		if row.ID != 100 {
 			t.Errorf("ID = %d, want 100", row.ID)
@@ -87,7 +87,7 @@ func TestIssueRowFromObject(t *testing.T) {
 			ClosedOn: "2026-02-20T12:00:00Z",
 		}
 
-		row := issueRowFromObject(obj)
+		row := issueRowFromObject(obj, 0)
 
 		if row.AssignedToID != 0 {
 			t.Errorf("AssignedToID = %d, want 0", row.AssignedToID)
@@ -103,6 +103,56 @@ func TestIssueRowFromObject(t *testing.T) {
 		}
 		if row.ClosedOn == nil {
 			t.Error("ClosedOn should not be nil")
+		}
+	})
+}
+
+func TestIssueRowAssignedToMe(t *testing.T) {
+	baseObj := func(assignedToID int64) rm.IssueObject {
+		obj := rm.IssueObject{
+			ID:       1,
+			Project:  rm.IDName{ID: 1, Name: "P"},
+			Tracker:  rm.IDName{ID: 1, Name: "T"},
+			Status:   rm.IssueStatusObject{ID: 1, Name: "S"},
+			Priority: rm.IDName{ID: 1, Name: "N"},
+			Author:   rm.IDName{ID: 1, Name: "A"},
+			Subject:  "subject",
+		}
+		if assignedToID != 0 {
+			obj.AssignedTo = &rm.IDName{ID: assignedToID, Name: "Assignee"}
+		}
+		return obj
+	}
+
+	t.Run("assigned to me", func(t *testing.T) {
+		row := issueRowFromObject(baseObj(42), 42)
+		if !row.AssignedToMe {
+			t.Error("AssignedToMe should be true when AssignedTo.ID == meID")
+		}
+	})
+
+	t.Run("assigned to someone else", func(t *testing.T) {
+		row := issueRowFromObject(baseObj(99), 42)
+		if row.AssignedToMe {
+			t.Error("AssignedToMe should be false when AssignedTo.ID != meID")
+		}
+	})
+
+	t.Run("unassigned", func(t *testing.T) {
+		row := issueRowFromObject(baseObj(0), 42)
+		if row.AssignedToMe {
+			t.Error("AssignedToMe should be false when issue is unassigned")
+		}
+	})
+
+	t.Run("meID zero never matches", func(t *testing.T) {
+		row := issueRowFromObject(baseObj(0), 0)
+		if row.AssignedToMe {
+			t.Error("AssignedToMe should be false when meID is 0 and issue is unassigned")
+		}
+		row = issueRowFromObject(baseObj(42), 0)
+		if row.AssignedToMe {
+			t.Error("AssignedToMe should be false when meID is 0 even if issue has an assignee")
 		}
 	})
 }

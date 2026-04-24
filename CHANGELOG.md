@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1 (2026-04-24)
+
+### Bug Fixes
+
+- Fix `assigned_to_me` filter returning zero rows. The column was declared with a constant `false` transform, so even when the API filter pushed down correctly, Postgres FDW dropped every row when evaluating `assigned_to_me = true` against the constant `false` result. The column is now computed from the actual assignee against the API key owner's user ID, so `WHERE assigned_to_me = true` returns the matching issues and the column value reflects reality in the result set.
+
 ## 0.4.0 (2026-03-24)
 
 ### Tables
