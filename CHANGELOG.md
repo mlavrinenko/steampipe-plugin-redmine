@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0 (2026-04-29)
+
+### Tables
+
+- `redmine_group_member` - Group memberships (one row per user per group). Listing requires `group_id` in the WHERE clause; backed by `GET /groups/:id.json?include=users` with per-group caching.
+
 ## 0.4.1 (2026-04-24)
 
 ### Bug Fixes
