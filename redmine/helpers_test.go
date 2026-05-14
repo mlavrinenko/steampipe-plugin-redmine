@@ -1,9 +1,100 @@
 package redmine
 
 import (
+	"reflect"
 	"testing"
 	"time"
+
+	"github.com/turbot/steampipe-plugin-sdk/v5/grpc/proto"
 )
+
+func protoInt64Qual(values ...int64) *proto.Qual {
+	pvs := make([]*proto.QualValue, len(values))
+	for i, v := range values {
+		pvs[i] = &proto.QualValue{Value: &proto.QualValue_Int64Value{Int64Value: v}}
+	}
+	return &proto.Qual{
+		FieldName: "project_id",
+		Operator:  &proto.Qual_StringValue{StringValue: "="},
+		Value:     &proto.QualValue{Value: &proto.QualValue_ListValue{ListValue: &proto.QualValueList{Values: pvs}}},
+	}
+}
+
+func protoScalarInt64Qual(value int64) *proto.Qual {
+	return &proto.Qual{
+		FieldName: "project_id",
+		Operator:  &proto.Qual_StringValue{StringValue: "="},
+		Value:     &proto.QualValue{Value: &proto.QualValue_Int64Value{Int64Value: value}},
+	}
+}
+
+func TestExtractInt64InList(t *testing.T) {
+	tests := map[string]struct {
+		quals    map[string]*proto.Quals
+		column   string
+		expected []int64
+	}{
+		"IN list of three": {
+			quals: map[string]*proto.Quals{
+				"project_id": {Quals: []*proto.Qual{protoInt64Qual(100058022, 100058032, 100058033)}},
+			},
+			column:   "project_id",
+			expected: []int64{100058022, 100058032, 100058033},
+		},
+		"IN list deduped and sorted": {
+			quals: map[string]*proto.Quals{
+				"project_id": {Quals: []*proto.Qual{protoInt64Qual(3, 1, 2, 1, 3)}},
+			},
+			column:   "project_id",
+			expected: []int64{1, 2, 3},
+		},
+		"singleton IN list": {
+			quals: map[string]*proto.Quals{
+				"project_id": {Quals: []*proto.Qual{protoInt64Qual(42)}},
+			},
+			column:   "project_id",
+			expected: []int64{42},
+		},
+		"scalar equality is not a list": {
+			quals: map[string]*proto.Quals{
+				"project_id": {Quals: []*proto.Qual{protoScalarInt64Qual(7)}},
+			},
+			column:   "project_id",
+			expected: nil,
+		},
+		"column missing": {
+			quals:    map[string]*proto.Quals{},
+			column:   "project_id",
+			expected: nil,
+		},
+		"different column": {
+			quals: map[string]*proto.Quals{
+				"user_id": {Quals: []*proto.Qual{protoInt64Qual(1, 2)}},
+			},
+			column:   "project_id",
+			expected: nil,
+		},
+		"mixed scalar and list qualifiers for same column": {
+			quals: map[string]*proto.Quals{
+				"project_id": {Quals: []*proto.Qual{
+					protoScalarInt64Qual(5),
+					protoInt64Qual(2, 4),
+				}},
+			},
+			column:   "project_id",
+			expected: []int64{2, 4},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := extractInt64InList(tc.quals, tc.column)
+			if !reflect.DeepEqual(got, tc.expected) {
+				t.Errorf("extractInt64InList(%v, %q) = %v, want %v", tc.quals, tc.column, got, tc.expected)
+			}
+		})
+	}
+}
 
 func TestParseRedmineDate(t *testing.T) {
 	date := "2026-02-15"

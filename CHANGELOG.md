@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1 (2026-05-14)
+
+### Bug Fixes
+
+- **redmine_time_entry**: Dedup rows when filtering `project_id IN (P1, P2, ...)`. Redmine's `/time_entries.json?project_id=P` endpoint returns entries from `P` and all its descendant projects, so the Steampipe SDK's IN-list fan-out (one REST call per IN value) caused entries to be streamed once for every ancestor-or-self project also present in the IN list. `SUM(hours)` and `COUNT(*)` over an ancestor + descendant pair previously overcounted by 2×–3×. Fan-out goroutines now elect a single "leader" that issues one paginated call per distinct project ID and skips entries already seen in the merged stream. Downstream consumers (e.g. `redmine-swiss-knife`) that were using `SELECT DISTINCT id ...` subqueries to work around this can drop the workaround once they pick up this version.
+
 ## 0.5.0 (2026-04-29)
 
 ### Tables

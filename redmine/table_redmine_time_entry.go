@@ -129,42 +129,90 @@ func listTimeEntries(ctx context.Context, d *plugin.QueryData, h *plugin.Hydrate
 	// TimeEntryAllGet() for two reasons:
 	// 1. TimeEntryAllGet fetches all pages into memory (no early exit via RowsRemaining)
 	// 2. The library's TimeEntryGetRequestFilters doesn't support issue_id filtering
-	params := url.Values{}
+	baseParams := url.Values{}
 
-	if d.EqualsQuals["project_id"] != nil {
-		params.Set("project_id", strconv.FormatInt(d.EqualsQuals["project_id"].GetInt64Value(), 10))
-	}
 	if d.EqualsQuals["issue_id"] != nil {
-		params.Set("issue_id", strconv.FormatInt(d.EqualsQuals["issue_id"].GetInt64Value(), 10))
+		baseParams.Set("issue_id", strconv.FormatInt(d.EqualsQuals["issue_id"].GetInt64Value(), 10))
 	}
 	if d.EqualsQuals["user_id"] != nil {
-		params.Set("user_id", strconv.FormatInt(d.EqualsQuals["user_id"].GetInt64Value(), 10))
+		baseParams.Set("user_id", strconv.FormatInt(d.EqualsQuals["user_id"].GetInt64Value(), 10))
 	}
 	if d.EqualsQuals["activity_id"] != nil {
-		params.Set("activity_id", strconv.FormatInt(d.EqualsQuals["activity_id"].GetInt64Value(), 10))
+		baseParams.Set("activity_id", strconv.FormatInt(d.EqualsQuals["activity_id"].GetInt64Value(), 10))
 	}
 
 	from, to := extractSpentOnRange(d.Quals)
 	if from != "" {
-		params.Set("from", from)
+		baseParams.Set("from", from)
 	}
 	if to != "" {
-		params.Set("to", to)
+		baseParams.Set("to", to)
 	}
 
+	// Redmine's GET /time_entries.json?project_id=P returns entries from P AND
+	// all its descendant projects. When the user writes `project_id IN (P1..Pn)`,
+	// the SDK fan-out runs this list hydrate once per IN value in its own
+	// goroutine, and the same entry can come back from the call for its leaf
+	// project, its parent, its grandparent, etc. — so the naive merged result
+	// double-counts.
+	//
+	// Fix: read the original IN list from QueryContext.UnsafeQuals (shared
+	// across fan-out goroutines), elect a single "leader" (the goroutine whose
+	// scalar EqualsQuals["project_id"] matches the smallest IN value), and
+	// have it issue one REST sequence per distinct project_id while deduping
+	// the merged stream by entry ID. Non-leaders no-op so we still fire one
+	// call per project_id but stream each entry at most once.
+	//
+	// When project_id IN (...) co-occurs with another IN qual (e.g. user_id),
+	// the SDK skips fan-out entirely (no required IN qual to pick) and calls
+	// this function once with EqualsQuals["project_id"] == nil; the same
+	// expand-and-dedup path still applies.
+	if projectIDs := extractInt64InList(d.QueryContext.UnsafeQuals, "project_id"); projectIDs != nil {
+		if currentQ := d.EqualsQuals["project_id"]; currentQ != nil && currentQ.GetInt64Value() != projectIDs[0] {
+			return nil, nil
+		}
+		seen := make(map[int64]struct{})
+		for _, pid := range projectIDs {
+			params := cloneURLValues(baseParams)
+			params.Set("project_id", strconv.FormatInt(pid, 10))
+			stopped, err := streamTimeEntries(ctx, d, client, params, seen)
+			if err != nil {
+				return nil, err
+			}
+			if stopped {
+				return nil, nil
+			}
+		}
+		return nil, nil
+	}
+
+	if d.EqualsQuals["project_id"] != nil {
+		baseParams.Set("project_id", strconv.FormatInt(d.EqualsQuals["project_id"].GetInt64Value(), 10))
+	}
+	if _, err := streamTimeEntries(ctx, d, client, baseParams, nil); err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
+// streamTimeEntries paginates GET /time_entries.json with the given params and
+// streams each entry to the SDK. It returns (stopped, err): stopped is true
+// when the row-limit has been reached and no further pages should be fetched.
+// When `seen` is non-nil, entries whose IDs are already in the set are skipped
+// (and the rest are added to it) so successive calls with overlapping result
+// sets stream each entry at most once.
+func streamTimeEntries(ctx context.Context, d *plugin.QueryData, client *rm.Context, params url.Values, seen map[int64]struct{}) (bool, error) {
 	var offset int64
 	var pageSize int64 = 100
 	if d.QueryContext.Limit != nil && *d.QueryContext.Limit < pageSize {
 		pageSize = *d.QueryContext.Limit
 	}
-
 	params.Set("limit", strconv.FormatInt(pageSize, 10))
 
 	for {
 		if ctx.Err() != nil {
-			return nil, ctx.Err()
+			return false, ctx.Err()
 		}
-
 		params.Set("offset", strconv.FormatInt(offset, 10))
 
 		var result rm.TimeEntryResult
@@ -177,22 +225,33 @@ func listTimeEntries(ctx context.Context, d *plugin.QueryData, h *plugin.Hydrate
 			http.StatusOK,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("failed to list time entries: %w", err)
+			return false, fmt.Errorf("failed to list time entries: %w", err)
 		}
 
 		for _, te := range result.TimeEntries {
+			if seen != nil {
+				if _, dup := seen[te.ID]; dup {
+					continue
+				}
+				seen[te.ID] = struct{}{}
+			}
 			d.StreamListItem(ctx, timeEntryRowFromObject(te))
-
 			if d.RowsRemaining(ctx) == 0 {
-				return nil, nil
+				return true, nil
 			}
 		}
 
 		if int64(len(result.TimeEntries)) < pageSize {
-			break
+			return false, nil
 		}
 		offset += pageSize
 	}
+}
 
-	return nil, nil
+func cloneURLValues(v url.Values) url.Values {
+	out := make(url.Values, len(v))
+	for k, vs := range v {
+		out[k] = append([]string(nil), vs...)
+	}
+	return out
 }

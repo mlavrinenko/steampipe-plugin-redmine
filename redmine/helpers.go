@@ -1,10 +1,49 @@
 package redmine
 
 import (
+	"sort"
 	"time"
 
+	"github.com/turbot/steampipe-plugin-sdk/v5/grpc/proto"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 )
+
+// extractInt64InList returns the distinct, ascending int64 values of a list-valued
+// (IN) qual on the given column from the original FDW quals. Returns nil if the
+// column has no list-valued qual (a scalar `=` or no qual at all).
+//
+// The SDK's KeyColumn fan-out runs the list hydrate once per IN value, with the
+// other goroutines unaware of the original list. This helper recovers the list
+// from QueryContext.UnsafeQuals so a hydrate function can decide between
+// per-value semantics (the SDK's default) and whole-list semantics (e.g. cross
+// fan-out dedup of overlapping subtree results).
+func extractInt64InList(unsafeQuals map[string]*proto.Quals, column string) []int64 {
+	qs, ok := unsafeQuals[column]
+	if !ok || qs == nil {
+		return nil
+	}
+	seen := make(map[int64]struct{})
+	var out []int64
+	for _, q := range qs.GetQuals() {
+		lv := q.Value.GetListValue()
+		if lv == nil {
+			continue
+		}
+		for _, v := range lv.Values {
+			id := v.GetInt64Value()
+			if _, dup := seen[id]; dup {
+				continue
+			}
+			seen[id] = struct{}{}
+			out = append(out, id)
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i] < out[j] })
+	return out
+}
 
 // parseRedmineTime parses a Redmine API timestamp string into *time.Time.
 // Returns nil if parsing fails.
